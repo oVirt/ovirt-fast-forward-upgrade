@@ -15,6 +15,24 @@
 import subprocess
 
 
+def execute_cmd(command):
+    """
+    Execute cmd, use ['cmd' 'argument'] format for command argument
+    Returns: output or raise an error
+    """
+    p = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=False
+    )
+    out, err = p.communicate()
+    if p.returncode != 0:
+        raise RuntimeError("Command %s failed, rc=%s, out=%r, err=%r",
+                           command, p.returncode, out, err)
+    return out
+
+
 class Subscriptions(object):
     RHV_40_REPOS = [
         "rhel-7-server-supplementary-rpms",
@@ -30,21 +48,35 @@ class Subscriptions(object):
         "jb-eap-7-for-rhel-7-server-rpms"
     ]
 
+    SUBSCRIPTION_MANAGER_GET_ENABLED_REPOS = [
+        'env', 'LC_ALL=C', 'subscription-manager', 'repos', '--list-enabled'
+    ]
+
+    SUBSCRIPTION_MANAGER_ENABLE_REPO = [
+        'env', 'LC_ALL=C', 'subscription-manager', 'repos', '--enable='
+    ]
+
+    SUBSCRIPTION_MANAGER_DISABLE_REPO = [
+        'env', 'LC_ALL=C', 'subscription-manager', 'repos', '--disable='
+    ]
+
     def __init__(self):
         super(Subscriptions, self).__init__()
         self.repos = []
 
     def get_enabled_repos(self):
         self.repos = []
-        output = subprocess.check_output(
-            "env LC_ALL=C subscription-manager repos --list-enabled",
-            shell=True
+
+        output = execute_cmd(
+             self.SUBSCRIPTION_MANAGER_GET_ENABLED_REPOS
         ).splitlines()
+
         for line in output:
             if(':' in line):
                 key, value = line.split(':')
                 if key == 'Repo ID':
                     self.repos.append(value)
+
         return self.repos
 
     def check_rhv_40_repos(self):
@@ -80,55 +112,94 @@ class Subscriptions(object):
         return True
 
     def enable_repo(self, repo):
-        output = subprocess.check_output(
-            "env LC_ALL=C subscription-manager repos --enable={repo}".format(
-                repo=repo
-            ),
-            shell=True
-        )
-        return output
+        '''
+        Enable repository using subscription-manager
+        Parameters:
+            repo - repository name (str or list)
+        Returns: command output
+        '''
+        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER_ENABLE_REPO)
+        rhsm_cmd.extend(repo)
+
+        return execute_cmd(rhsm_cmd)
 
     def disable_repo(self, repo):
-        output = subprocess.check_output(
-            "env LC_ALL=C subscription-manager repos --disable={repo}".format(
-                repo=repo
-            ),
-            shell=True
-        )
-        return output
+        '''
+        Disable repository using subscription-manager
+        Parameters:
+            repo - repository name (str or list)
+        Returns: command output
+        '''
+        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER_DISABLE_REPO)
+        rhsm_cmd.extend(repo)
+
+        return execute_cmd(rhsm_cmd)
 
 
 def UpgradeHelper(object):
+
+    UPGRADE_CHECK = [
+        'env', 'LC_ALL=C', 'engine-upgrade-check'
+    ]
+
+    YUM_UPDATE_CMD = [
+        'env', 'LC_ALL=C', 'yum', 'update'
+    ]
+
+    LIST_RPM_PKGS = [
+        'rpm', '-qa', '--queryformat=%{NAME}\n'
+    ]
+
+    ENGINE_SETUP = [
+        'env', 'LC_ALL=C', 'engine-setup'
+    ]
+
     def __init__(self):
         super(UpgradeHelper, self).__init__()
 
     def is_upgrade_available(self):
-        output = subprocess.check_output(
-            "env LC_ALL=C engine-upgrade-check",
-            shell=True
-        )
-        return output
+        '''
+        Execute engine-upgrade-check
+        Returns: command output
+        '''
+        return execute_cmd(UPGRADE_CHECK)
 
     def upgrade_engine_setup(self):
-        output = subprocess.check_output(
-            "env LC_ALL=C yum update ovirt-engine-setup\*",
-            shell=True
-        )
-        return output
+        '''
+        Look for packages with ovirt-engine-setup* name
+        and execute yum update
+        Returns: Empty list or yum update output
+        '''
+
+        print("Consulting ovirt-engine-setup packages in the "
+              "system for update...")
+
+        pkgs_for_update = []
+        for pkg in execute_cmd(LIST_RPM_PKGS).split():
+            if 'ovirt-engine-setup' in pkg:
+                pkgs_for_update.append(pkg)
+
+        if pkgs_for_update:
+            yum_update_cmd = list(YUM_UPDATE_CMD)
+            yum_update_cmd.extend(pkgs_for_update)
+
+            return execute_cmd(yum_update_cmd)
+
+        return pkgs_for_update
 
     def run_engine_setup(self):
-        output = subprocess.check_output(
-            "env LC_ALL=C engine-setup",
-            shell=True
-        )
-        return output
+        '''
+        Execute engine-setup
+        Returns: command output
+        '''
+        return execute_cmd(ENGINE_SETUP)
 
     def update_system(self):
-        output = subprocess.check_output(
-            "env LC_ALL=C yum update",
-            shell=True
-        )
-        return output
+        '''
+        Execute yum update
+        Returns: command output
+        '''
+        return execute_cmd(YUM_UPDATE_CMD)
 
 
 def main():
