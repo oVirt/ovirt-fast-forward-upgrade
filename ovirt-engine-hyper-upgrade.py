@@ -81,7 +81,7 @@ class Subscriptions(object):
 
     def enable_repo(self, repo):
         output = subprocess.check_output(
-            "env LC_ALL=C ubscription-manager repos --enable={repo}".format(
+            "env LC_ALL=C subscription-manager repos --enable={repo}".format(
                 repo=repo
             ),
             shell=True
@@ -90,7 +90,7 @@ class Subscriptions(object):
 
     def disable_repo(self, repo):
         output = subprocess.check_output(
-            "env LC_ALL=C ubscription-manager repos --disable={repo}".format(
+            "env LC_ALL=C subscription-manager repos --disable={repo}".format(
                 repo=repo
             ),
             shell=True
