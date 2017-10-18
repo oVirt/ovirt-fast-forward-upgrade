@@ -204,41 +204,51 @@ class UpgradeHelper(object):
 
 
 def main():
+    '''
+    Tool to manage channels for RHV
+    '''
     c = Subscriptions()
     print((c.get_enabled_repos()))
+
     if c.check_rhv_40_repos():
         u = UpgradeHelper()
         if u.is_upgrade_available():
             print("An upgrade is available, upgrading to latest 4.0.z")
             u.upgrade_engine_setup()
             u.run_engine_setup()
+
             updated = u.update_system()
             if "kernel" in updated:
                 print("A kernel update has been installed, please reboot the "
                       "system to complete the update.")
                 return
+
         c.enable_repo("rhel-7-server-rhv-4.1-rpms")
         u.upgrade_engine_setup()
         u.run_engine_setup()
         updated = u.update_system()
         c.disable_repo("rhel-7-server-rhv-4.0-rpms")
+
         print("Please reboot the system to complete the update.")
         print("Once rebooted, please change the cluster and datacenter "
               "compatibility level to 4.1.\n"
               "See Chapter 4, Post-Upgrade Tasks: "
               "https://access.redhat.com/documentation/en/red-hat-virtual"
               "ization/4.1/single/upgrade-guide#chap-Post-Upgrade_Tasks")
+
     if c.check_rhv_41_repos():
         u = UpgradeHelper()
         if u.is_upgrade_available():
             print("An upgrade is available, upgrading to latest 4.1.z")
             u.upgrade_engine_setup()
             u.run_engine_setup()
+
             updated = u.update_system()
             if "kernel" in updated:
                 print("A kernel update has been installed, please reboot the "
                       "system to complete the update.")
                 return
+
         c.enable_repo("rhel-7-server-rhv-4.2-rpms")
         u.upgrade_engine_setup()
         u.run_engine_setup()
@@ -252,6 +262,7 @@ def main():
               "zation/4.2/single/upgrade-guide#chap-Post-Upgrade_Tasks")
 
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())
