@@ -162,7 +162,7 @@ class UpgradeHelper(object):
         Execute engine-upgrade-check
         Returns: command output
         '''
-        return execute_cmd(UPGRADE_CHECK)
+        return execute_cmd(self.UPGRADE_CHECK)
 
     def upgrade_engine_setup(self):
         '''
@@ -175,12 +175,12 @@ class UpgradeHelper(object):
               "system for update...")
 
         pkgs_for_update = []
-        for pkg in execute_cmd(LIST_RPM_PKGS).split():
+        for pkg in execute_cmd(self.LIST_RPM_PKGS).split():
             if 'ovirt-engine-setup' in pkg:
                 pkgs_for_update.append(pkg)
 
         if pkgs_for_update:
-            yum_update_cmd = list(YUM_UPDATE_CMD)
+            yum_update_cmd = list(self.YUM_UPDATE_CMD)
             yum_update_cmd.extend(pkgs_for_update)
 
             return execute_cmd(yum_update_cmd)
@@ -192,14 +192,14 @@ class UpgradeHelper(object):
         Execute engine-setup
         Returns: command output
         '''
-        return execute_cmd(ENGINE_SETUP)
+        return execute_cmd(self.ENGINE_SETUP)
 
     def update_system(self):
         '''
         Execute yum update
         Returns: command output
         '''
-        return execute_cmd(YUM_UPDATE_CMD)
+        return execute_cmd(self.YUM_UPDATE_CMD)
 
 
 def main():
