@@ -55,7 +55,7 @@ class Subscriptions(object):
         if missing:
             print("The following repositories are required for RHV 4.0:")
             for repo in missing:
-                print(" - {repo}".format(repo=repo))
+                print((" - {repo}".format(repo=repo)))
         if unknown:
             print("The following repositories are enabled and not supported "
                   "for RHV 4.0")
@@ -71,7 +71,7 @@ class Subscriptions(object):
         if missing:
             print("The following repositories are required for RHV 4.1:")
             for repo in missing:
-                print(" - {repo}".format(repo=repo))
+                print((" - {repo}".format(repo=repo)))
         if unknown:
             print("The following repositories are enabled and not supported "
                   "for RHV 4.1")
@@ -133,7 +133,7 @@ def UpgradeHelper(object):
 
 def main():
     c = Subscriptions()
-    print(c.get_enabled_repos())
+    print((c.get_enabled_repos()))
     if c.check_rhv_40_repos():
         u = UpgradeHelper()
         if u.is_upgrade_available():
