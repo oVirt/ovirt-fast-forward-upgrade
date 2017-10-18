@@ -2,6 +2,7 @@
 
 import subprocess
 
+
 class Subscriptions(object):
     RHV_40_REPOS = [
         "rhel-7-server-supplementary-rpms",
@@ -84,6 +85,7 @@ class Subscriptions(object):
         )
         return output
 
+
 def UpgradeHelper(object):
     def __init__(self):
         super(UpgradeHelper, self).__init__()
@@ -116,6 +118,7 @@ def UpgradeHelper(object):
         )
         return output
 
+
 def main():
     c = Subscriptions()
     print(c.get_enabled_repos())
@@ -128,7 +131,7 @@ def main():
             updated = u.update_system()
             if "kernel" in updated:
                 print("A kernel update has been installed, please reboot the "
-                    "system to complete the update.")
+                      "system to complete the update.")
                 return
         c.enable_repo("rhel-7-server-rhv-4.1-rpms")
         u.upgrade_engine_setup()
@@ -137,10 +140,10 @@ def main():
         c.disable_repo("rhel-7-server-rhv-4.0-rpms")
         print("Please reboot the system to complete the update.")
         print("Once rebooted, please change the cluster and datacenter "
-            "compatibility level to 4.1.\n"
-            "See Chapter 4, Post-Upgrade Tasks: "
-            "https://access.redhat.com/documentation/en/red-hat-virtualization/"
-            "4.1/single/upgrade-guide#chap-Post-Upgrade_Tasks")
+              "compatibility level to 4.1.\n"
+              "See Chapter 4, Post-Upgrade Tasks: "
+              "https://access.redhat.com/documentation/en/red-hat-virtual"
+              "ization/4.1/single/upgrade-guide#chap-Post-Upgrade_Tasks")
     if c.check_rhv_41_repos():
         u = UpgradeHelper()
         if u.is_upgrade_available():
@@ -150,7 +153,7 @@ def main():
             updated = u.update_system()
             if "kernel" in updated:
                 print("A kernel update has been installed, please reboot the "
-                    "system to complete the update.")
+                      "system to complete the update.")
                 return
         c.enable_repo("rhel-7-server-rhv-4.2-rpms")
         u.upgrade_engine_setup()
@@ -159,9 +162,10 @@ def main():
         c.disable_repo("rhel-7-server-rhv-4.1-rpms")
         print("Please reboot the system to complete the update.")
         print("Once rebooted, please change the cluster and datacenter "
-            "compatibility level to 4.2.\n"
-            "See Chapter 4, Post-Upgrade Tasks: "
-            "https://access.redhat.com/documentation/en/red-hat-virtualization/"
-            "4.2/single/upgrade-guide#chap-Post-Upgrade_Tasks")
+              "compatibility level to 4.2.\n"
+              "See Chapter 4, Post-Upgrade Tasks: "
+              "https://access.redhat.com/documentation/en/red-hat-virtuali"
+              "zation/4.2/single/upgrade-guide#chap-Post-Upgrade_Tasks")
+
 
 main()
