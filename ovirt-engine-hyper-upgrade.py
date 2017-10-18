@@ -13,6 +13,7 @@
 #  limitations under the License.
 #
 import subprocess
+import sys
 
 
 def execute_cmd(command):
@@ -250,5 +251,7 @@ def main():
               "https://access.redhat.com/documentation/en/red-hat-virtuali"
               "zation/4.2/single/upgrade-guide#chap-Post-Upgrade_Tasks")
 
+    return 0
 
-main()
+if __name__ == '__main__':
+    sys.exit(main())
