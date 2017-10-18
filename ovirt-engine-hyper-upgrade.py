@@ -136,7 +136,7 @@ class Subscriptions(object):
         return execute_cmd(rhsm_cmd)
 
 
-def UpgradeHelper(object):
+class UpgradeHelper(object):
 
     UPGRADE_CHECK = [
         'env', 'LC_ALL=C', 'engine-upgrade-check'
