@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+import argparse
 import subprocess
 import sys
 
@@ -205,12 +206,42 @@ class UpgradeHelper(object):
 
 def main():
     '''
-    Tool to manage channels for RHV
+    A tool to help users upgrade RHV environments
     '''
-    c = Subscriptions()
-    print((c.get_enabled_repos()))
 
-    if c.check_rhv_40_repos():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description='Tool to upgrade RHV environments',
+        epilog='Example of use:\n%(prog)s '
+                    '--check-upgrade-rhv-4-0'
+    )
+
+    parser.add_argument(
+        '--check-upgrade-rhv-4-0',
+        action='store_true',
+        help='Check if RHV 4.0 channels have upgrade available',
+    )
+
+    parser.add_argument(
+        '--check-upgrade-rhv-4-1',
+        action='store_true',
+        help='Check if RHV 4.1 channels have upgrade available',
+    )
+
+    parser.add_argument(
+        '--list-enabled-repos',
+        action='store_true',
+        help='List all enabled repositories',
+    )
+
+    args = parser.parse_args()
+    c = Subscriptions()
+
+    if args.list_enabled_repos:
+        print((c.get_enabled_repos()))
+        return 0
+
+    elif args.check_upgrade_rhv_4_0 and c.check_rhv_40_repos():
         u = UpgradeHelper()
         if u.is_upgrade_available():
             print("An upgrade is available, upgrading to latest 4.0.z")
@@ -236,7 +267,7 @@ def main():
               "https://access.redhat.com/documentation/en/red-hat-virtual"
               "ization/4.1/single/upgrade-guide#chap-Post-Upgrade_Tasks")
 
-    if c.check_rhv_41_repos():
+    elif args.check_upgrade_rhv_4_1 and c.check_rhv_41_repos():
         u = UpgradeHelper()
         if u.is_upgrade_available():
             print("An upgrade is available, upgrading to latest 4.1.z")
@@ -260,6 +291,9 @@ def main():
               "See Chapter 4, Post-Upgrade Tasks: "
               "https://access.redhat.com/documentation/en/red-hat-virtuali"
               "zation/4.2/single/upgrade-guide#chap-Post-Upgrade_Tasks")
+    else:
+        print('Error: You must specify a valid operation. See usage:')
+        parser.print_usage()
 
     return 0
 
