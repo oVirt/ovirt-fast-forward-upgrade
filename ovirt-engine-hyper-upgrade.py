@@ -224,13 +224,15 @@ def main():
     parser.add_argument(
         '--check-upgrade-rhv-4-0',
         action='store_true',
-        help='Check if RHV 4.0 channels have upgrade available',
+        help='Check if RHV 4.0 channels have upgrade available. '
+             'Also enable 4.1 channels',
     )
 
     parser.add_argument(
         '--check-upgrade-rhv-4-1',
         action='store_true',
-        help='Check if RHV 4.1 channels have upgrade available',
+        help='Check if RHV 4.1 channels have zstream upgrade available. '
+             'Also enable 4.2 channels',
     )
 
     parser.add_argument(
