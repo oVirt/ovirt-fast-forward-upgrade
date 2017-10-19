@@ -50,16 +50,8 @@ class Subscriptions(object):
         "jb-eap-7-for-rhel-7-server-rpms"
     ]
 
-    SUBSCRIPTION_MANAGER_GET_ENABLED_REPOS = [
-        'env', 'LC_ALL=C', 'subscription-manager', 'repos', '--list-enabled'
-    ]
-
-    SUBSCRIPTION_MANAGER_ENABLE_REPO = [
-        'env', 'LC_ALL=C', 'subscription-manager', 'repos', '--enable='
-    ]
-
-    SUBSCRIPTION_MANAGER_DISABLE_REPO = [
-        'env', 'LC_ALL=C', 'subscription-manager', 'repos', '--disable='
+    SUBSCRIPTION_MANAGER = [
+        'env', 'LC_ALL=C', 'subscription-manager'
     ]
 
     def __init__(self):
@@ -74,9 +66,10 @@ class Subscriptions(object):
         '''
         self.repos = []
 
-        output = execute_cmd(
-             self.SUBSCRIPTION_MANAGER_GET_ENABLED_REPOS
-        ).splitlines()
+        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
+        rhsm_cmd.extend(['repos', '--list-enabled'])
+
+        output = execute_cmd(rhsm_cmd).splitlines()
 
         for line in output:
             if(':' in line):
@@ -128,27 +121,26 @@ class Subscriptions(object):
 
         return True
 
-    def enable_repo(self, repo):
+    def repository(self, action, repo):
         '''
         Enable repository using subscription-manager
         Parameters:
-            repo - repository name (str or list)
+            repo - repository name (str)
         Returns: command output
         '''
-        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER_ENABLE_REPO)
-        rhsm_cmd.extend(repo)
 
-        return execute_cmd(rhsm_cmd)
+        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
 
-    def disable_repo(self, repo):
-        '''
-        Disable repository using subscription-manager
-        Parameters:
-            repo - repository name (str or list)
-        Returns: command output
-        '''
-        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER_DISABLE_REPO)
-        rhsm_cmd.extend(repo)
+        if 'enable' == action:
+            action = ['repos', '--enable', repo]
+        elif 'disable' == action:
+            action = ['repos', '--disable', repo]
+        else:
+            raise RuntimeError(
+                "Unknown action [%s] for repositories!" % action
+            )
+
+        rhsm_cmd.extend(action)
 
         return execute_cmd(rhsm_cmd)
 
@@ -271,11 +263,11 @@ def main():
                       "system to complete the update.")
                 return
 
-        c.enable_repo("rhel-7-server-rhv-4.1-rpms")
+        c.repository(action='enable', repo='rhel-7-server-rhv-4.1-rpms')
         u.upgrade_engine_setup()
         u.run_engine_setup()
         updated = u.update_system()
-        c.disable_repo("rhel-7-server-rhv-4.0-rpms")
+        c.repository(action='disable', repo='rhel-7-server-rhv-4.0-rpms')
 
         print("Please reboot the system to complete the update.")
         print("Once rebooted, please change the cluster and datacenter "
@@ -297,11 +289,11 @@ def main():
                       "system to complete the update.")
                 return
 
-        c.enable_repo("rhel-7-server-rhv-4.2-rpms")
+        c.repository(action='enable', repo='rhel-7-server-rhv-4.2-rpms')
         u.upgrade_engine_setup()
         u.run_engine_setup()
         updated = u.update_system()
-        c.disable_repo("rhel-7-server-rhv-4.1-rpms")
+        c.repository(action='disable', repo='rhel-7-server-rhv-4.1-rpms')
         print("Please reboot the system to complete the update.")
         print("Once rebooted, please change the cluster and datacenter "
               "compatibility level to 4.2.\n"
