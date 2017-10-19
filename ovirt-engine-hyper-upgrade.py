@@ -79,6 +79,11 @@ class Subscriptions(object):
                 if key == 'Repo ID':
                     self.repos.append(value)
 
+        # If not output found, print message
+        # join() to convert to str
+        if not self.repos:
+            return ''.join(output)
+
         return self.repos
 
     def check_rhv_40_repos(self):
