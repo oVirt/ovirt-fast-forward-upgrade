@@ -86,36 +86,41 @@ class Subscriptions(object):
 
         return self.repos
 
-    def check_rhv_40_repos(self):
-        enabled = set(self.repos)
-        required = set(self.RHV_40_REPOS)
-        unknown = enabled.difference(required)
-        missing = required.difference(enabled)
-        if missing:
-            print("The following repositories are required for RHV 4.0:")
-            for repo in missing:
-                print((" - {repo}".format(repo=repo)))
-        if unknown:
-            print("The following repositories are enabled and not supported "
-                  "for RHV 4.0")
-        if missing or unknown:
-            return False
-        return True
+    def check_rhv_repos(self, version):
+        """
+        Check repositories for RHV
 
-    def check_rhv_41_repos(self):
+        Parameters:
+            version: RHEV version to check, example of values (str):
+                4.0
+                4.1
+
+        Returns: True or False
+        """
         enabled = set(self.repos)
-        required = set(self.RHV_41_REPOS)
+
+        if version == '4.0':
+            required = set(self.RHV_40_REPOS)
+        elif version == '4.1':
+            required = set(self.RHV_41_REPOS)
+        else:
+            raise RuntimeError('Version parameters not supported!')
+
         unknown = enabled.difference(required)
         missing = required.difference(enabled)
         if missing:
-            print("The following repositories are required for RHV 4.1:")
+            print("The following repositories are required for {ver}".format(
+                    ver=version))
             for repo in missing:
                 print((" - {repo}".format(repo=repo)))
+
         if unknown:
             print("The following repositories are enabled and not supported "
-                  "for RHV 4.1")
+                  "for RHV {ver}".format(ver=version))
+
         if missing or unknown:
             return False
+
         return True
 
     def enable_repo(self, repo):
@@ -248,7 +253,7 @@ def main():
         print((c.get_enabled_repos()))
         return 0
 
-    elif args.check_upgrade_rhv_4_0 and c.check_rhv_40_repos():
+    elif args.check_upgrade_rhv_4_0 and c.check_rhv_repos('4.0'):
         u = UpgradeHelper()
         if u.is_upgrade_available():
             print("An upgrade is available, upgrading to latest 4.0.z")
@@ -274,7 +279,7 @@ def main():
               "https://access.redhat.com/documentation/en/red-hat-virtual"
               "ization/4.1/single/upgrade-guide#chap-Post-Upgrade_Tasks")
 
-    elif args.check_upgrade_rhv_4_1 and c.check_rhv_41_repos():
+    elif args.check_upgrade_rhv_4_1 and c.check_rhv_repos('4.1'):
         u = UpgradeHelper()
         if u.is_upgrade_available():
             print("An upgrade is available, upgrading to latest 4.1.z")
