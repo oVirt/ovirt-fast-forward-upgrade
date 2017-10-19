@@ -67,6 +67,11 @@ class Subscriptions(object):
         self.repos = []
 
     def get_enabled_repos(self):
+        '''
+        Get enabled repos
+
+        Returns: All repos or subsription-manager error output
+        '''
         self.repos = []
 
         output = execute_cmd(
@@ -87,7 +92,7 @@ class Subscriptions(object):
         return self.repos
 
     def check_rhv_repos(self, version):
-        """
+        '''
         Check repositories for RHV
 
         Parameters:
@@ -96,7 +101,7 @@ class Subscriptions(object):
                 4.1
 
         Returns: True or False
-        """
+        '''
         enabled = set(self.repos)
 
         if version == '4.0':
