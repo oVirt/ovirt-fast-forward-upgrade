@@ -36,6 +36,10 @@ Source0:       http://resources.ovirt.org/pub/ovirt-master-snapshot/src/%{packag
 
 BuildArch:     noarch
 
+Requires: subscription-manager
+Requires: ovirt-engine-setup-base
+Requires: ovirt-engine-setup-plugin-ovirt-engine
+
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
 
