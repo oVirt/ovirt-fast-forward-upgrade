@@ -1,0 +1,83 @@
+%global         package_version @PACKAGE_VERSION@
+%global         package_name @PACKAGE_NAME@
+
+%if 0%{?fedora}
+%global         with_python3 1
+%global         __python_bin %{__python3}
+%global         __python_sitelib %{python3_sitelib}
+%else
+%global         __python_bin %{__python2}
+%global         __python_sitelib %{python2_sitelib}
+%endif
+
+# Skips check since rhel default repos lack flake8
+%if ! 0%{?rhel}
+%{!?with_check:%global with_check 1}
+%else
+%{!?with_check:%global with_check 0}
+%endif
+
+# Default to skipping autoreconf.  Distros can change just this one line
+# (or provide a command-line override) if they backport any patches that
+# touch configure.ac or Makefile.am.
+%{!?enable_autotools:%global enable_autotools 0}
+
+%global modname ovirt-engine-hyper-upgrade
+
+Name:          @PACKAGE_NAME@
+Version:       @PACKAGE_RPM_VERSION@
+Release:       @PACKAGE_RPM_RELEASE@%{?release_suffix}%{?dist}
+Summary:       Upgrade tool for RHV environments
+License:       GPLv2
+Group:         System Environment/Libraries
+URL:           http://www.ovirt.org
+
+Source0:       http://resources.ovirt.org/pub/ovirt-master-snapshot/src/%{package_name}/%{package_name}-%{package_version}.tar.gz
+
+BuildArch:     noarch
+
+BuildRequires: python2-devel
+BuildRequires: python-setuptools
+
+%if 0%{?with_check}
+BuildRequires: python-tools
+BuildRequires: python-flake8
+%endif
+
+# Autotools BuildRequires
+%if 0%{?enable_autotools}
+BuildRequires: autoconf
+BuildRequires: automake
+BuildRequires: gettext-devel
+BuildRequires: libtool
+%endif
+
+%{!?_licensedir:%global license %%doc}
+
+%description
+A tool to help users upgrade RHV environments
+
+%prep
+%setup -q -n %{name}-%{package_version}
+
+%build
+%if 0%{?enable_autotools}
+autoreconf -if
+%endif
+
+%configure \
+	PYTHON="%{__python_bin}"
+make %{?_smp_mflags}
+
+%install
+make %{?_smp_mflags} install DESTDIR="%{buildroot}"
+
+%files
+%doc AUTHORS
+%license LICENSE
+%{_sbindir}/ovirt-engine-hyper-upgrade
+%{_mandir}/man8/*
+
+%changelog
+* Thu Oct 19 2017 Douglas Schilling Landgraf <dougsland@gmail.com> 1.0-0
+- Initial take
