@@ -191,6 +191,7 @@ class UpgradeHelper(object):
         pkgs_for_update = []
         for pkg in execute_cmd(self.LIST_RPM_PKGS).split():
             if 'ovirt-engine-setup' in pkg:
+                print('Found: {p}'.format(p=pkg))
                 pkgs_for_update.append(pkg)
 
         if pkgs_for_update:
