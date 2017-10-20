@@ -216,6 +216,22 @@ def main():
     A tool to help users upgrade RHV environments
     '''
 
+    # Dictionary that keep the release data like:
+    # version, repo_to_enable, repo_to_disable
+    check_releases = {}
+    check_releases['repos'] = [
+        {
+            'version': '4.0',
+            'repo_to_enable': 'rhel-7-server-rhv-4.1-rpms',
+            'repo_to_disable': 'rhel-7-server-rhv-4.0-rpms'
+        },
+        {
+            'version': '4.1',
+            'repo_to_enable': 'rhel-7-server-rhv-4.2-rpms',
+            'repo_to_disable': 'rhel-7-server-rhv-4.1-rpms'
+        }
+    ]
+
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description='Tool to upgrade RHV environments',
@@ -243,6 +259,10 @@ def main():
         help='List all enabled repositories',
     )
 
+    if len(sys.argv) <= 1:
+        parser.print_usage()
+        sys.exit(1)
+
     args = parser.parse_args()
     c = Subscriptions()
 
@@ -250,59 +270,43 @@ def main():
         print((c.get_enabled_repos()))
         return 0
 
-    elif args.check_upgrade_rhv_4_0 and c.check_rhv_repos('4.0'):
-        u = UpgradeHelper()
-        if u.is_upgrade_available():
-            print("An upgrade is available, upgrading to latest 4.0.z")
-            u.upgrade_engine_setup()
-            u.run_engine_setup()
-
-            updated = u.update_system()
-            if "kernel" in updated:
-                print("A kernel update has been installed, please reboot the "
-                      "system to complete the update.")
-                return
-
-        c.repository(action='enable', repo='rhel-7-server-rhv-4.1-rpms')
-        u.upgrade_engine_setup()
-        u.run_engine_setup()
-        updated = u.update_system()
-        c.repository(action='disable', repo='rhel-7-server-rhv-4.0-rpms')
-
-        print("Please reboot the system to complete the update.")
-        print("Once rebooted, please change the cluster and datacenter "
-              "compatibility level to 4.1.\n"
-              "See Chapter 4, Post-Upgrade Tasks: "
-              "https://access.redhat.com/documentation/en/red-hat-virtual"
-              "ization/4.1/single/upgrade-guide#chap-Post-Upgrade_Tasks")
-
-    elif args.check_upgrade_rhv_4_1 and c.check_rhv_repos('4.1'):
-        u = UpgradeHelper()
-        if u.is_upgrade_available():
-            print("An upgrade is available, upgrading to latest 4.1.z")
-            u.upgrade_engine_setup()
-            u.run_engine_setup()
-
-            updated = u.update_system()
-            if "kernel" in updated:
-                print("A kernel update has been installed, please reboot the "
-                      "system to complete the update.")
-                return
-
-        c.repository(action='enable', repo='rhel-7-server-rhv-4.2-rpms')
-        u.upgrade_engine_setup()
-        u.run_engine_setup()
-        updated = u.update_system()
-        c.repository(action='disable', repo='rhel-7-server-rhv-4.1-rpms')
-        print("Please reboot the system to complete the update.")
-        print("Once rebooted, please change the cluster and datacenter "
-              "compatibility level to 4.2.\n"
-              "See Chapter 4, Post-Upgrade Tasks: "
-              "https://access.redhat.com/documentation/en/red-hat-virtuali"
-              "zation/4.2/single/upgrade-guide#chap-Post-Upgrade_Tasks")
+    if args.check_upgrade_rhv_4_0:
+        version = "4.0"
+    elif args.check_upgrade_rhv_4_1:
+        version = "4.1"
     else:
-        print('Error: You must specify a valid operation. See usage:')
-        parser.print_usage()
+        raise RuntimeError("Unable to detect the RHV version to check!")
+
+    for release in check_releases['repos']:
+        if release['version'] == version:
+            c.check_rhv_repos(release['version'])
+            u = UpgradeHelper()
+            if u.is_upgrade_available():
+                print("An upgrade is available, upgrading to "
+                      "latest {version}.z".format(version=release['version']))
+
+                u.upgrade_engine_setup()
+                u.run_engine_setup()
+
+                updated = u.update_system()
+                if "kernel" in updated:
+                    print("A kernel update has been installed, please "
+                          "reboot the system to complete the update.")
+                    return
+
+            c.repository(action='enable', repo=release['repo_to_enable'])
+            u.upgrade_engine_setup()
+            u.run_engine_setup()
+            updated = u.update_system()
+            c.repository(action='disable', repo=release['repo_to_disable'])
+
+            print("Please reboot the system to complete the update.")
+            print("Once rebooted, please change the cluster and datacenter "
+                  "compatibility level to {version}.\n"
+                  "See Chapter 4, Post-Upgrade Tasks: "
+                  "https://access.redhat.com/documentation/en/red-hat-virtual"
+                  "ization/{version}/single/upgrade-guide#chap-"
+                  "Post-Upgrade_Tasks".format(version=release['version']))
 
     return 0
 
