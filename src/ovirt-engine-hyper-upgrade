@@ -125,7 +125,12 @@ class Subscriptions(object):
         '''
         Enable repository using subscription-manager
         Parameters:
-            repo - repository name (str)
+            action
+                enable  - Enable channel
+                disable - Disable channel
+
+            repo
+                repository name (str)
         Returns: command output
         '''
 
