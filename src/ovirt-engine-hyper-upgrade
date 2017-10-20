@@ -24,27 +24,36 @@ def print_info(message):
     Argument:
         message - Message to be printed with INFO note
     """
-    print("\033[92m\n[ INFO ]\033[00m {msg}" .format(msg=message))
+    print("\033[92m\n[ INFO  ]\033[00m {msg}" .format(msg=message))
 
-def execute_cmd(command):
+
+def execute_cmd(command, print_output=True, env_shell=True):
     """
-    Execute cmd, use ['cmd' 'argument'] format for command argument
-    Returns: output or raise an error
+    Execute command
+
+    Parameters:
+        command - command to be executed, use ['cmd' 'argument']
+        print_output - Print output after execution
+        env_shell - Use the shell env, use True or False
+                    Using True for now as we want easy interaction with commands, like:
+                       - yum update and engine-setup
+
+    Returns: output or exit in case of cmd with no success return
     """
 
     print_info('Executing: {cmd}'.format(cmd=' '.join(command)))
 
+    command = ' '.join(command)
     p = subprocess.Popen(
         command,
-        stderr=subprocess.PIPE,
-        shell=False
+        shell=env_shell
     )
     output, err = p.communicate()
 
     if p.returncode != 0:
         sys.exit(2)
 
-    if output:
+    if output and print_output:
         print(output)
 
     return output
@@ -172,7 +181,7 @@ class UpgradeHelper(object):
     ]
 
     YUM_UPDATE_CMD = [
-        'env', 'LC_ALL=C', 'yum', 'update'
+        'env', 'LC_ALL=C', 'yum', 'update', 'ovirt-engine-setup*', 'ovirt-engine-dwh-setup*'
     ]
 
     LIST_RPM_PKGS = [
@@ -200,22 +209,10 @@ class UpgradeHelper(object):
         Returns: Empty list or yum update output
         '''
 
-        print("Consulting ovirt-engine-setup packages in the "
+        print("Consulting ovirt-engine-setup and ovirt-engine-dwh packages in the "
               "system for update...")
 
-        pkgs_for_update = []
-        for pkg in execute_cmd(self.LIST_RPM_PKGS).split():
-            if 'ovirt-engine-setup' in pkg:
-                print('Found: {p}'.format(p=pkg))
-                pkgs_for_update.append(pkg)
-
-        if pkgs_for_update:
-            yum_update_cmd = list(self.YUM_UPDATE_CMD)
-            yum_update_cmd.extend(pkgs_for_update)
-
-            return execute_cmd(yum_update_cmd)
-
-        return pkgs_for_update
+        return execute_cmd(self.YUM_UPDATE_CMD)
 
     def run_engine_setup(self):
         '''
