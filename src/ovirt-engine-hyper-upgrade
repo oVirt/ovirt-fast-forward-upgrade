@@ -46,13 +46,12 @@ def print_msg(message, type=None):
     else:
         print("{m}".format(m=message))
 
-def execute_cmd(command, print_output=True, env_shell=False):
+def execute_cmd(command, env_shell=False):
     """
     Execute command
 
     Parameters:
         command - command to be executed, use ['cmd' 'argument']
-        print_output - Print output after execution
         env_shell - Use the shell env, use True or False
 
     Returns: return code or exit in case of failure
