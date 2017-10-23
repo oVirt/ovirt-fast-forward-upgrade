@@ -24,7 +24,17 @@ def print_info(message):
     Argument:
         message - Message to be printed with INFO note
     """
-    print("\033[92m\n[ INFO  ]\033[00m {msg}" .format(msg=message))
+    print("\033[92m\n[ INFO  ]\033[00m {msg}".format(msg=message))
+
+
+def print_err(message):
+    """
+    Print [ INFO ] in green before the message
+
+    Argument:
+        message - Message to be printed with INFO note
+    """
+    print("\033[91m\n[ ERROR  ]\033[00m {msg}" .format(msg=message))
 
 
 def execute_cmd(command, print_output=True, env_shell=False):
@@ -36,7 +46,7 @@ def execute_cmd(command, print_output=True, env_shell=False):
         print_output - Print output after execution
         env_shell - Use the shell env, use True or False
 
-    Returns: output or exit in case of cmd with no success return
+    Returns: return code or exit in case of failure
     """
 
     print_info('Executing: {cmd}'.format(cmd=' '.join(command)))
@@ -48,8 +58,11 @@ def execute_cmd(command, print_output=True, env_shell=False):
     returncode = p.wait()
 
     if returncode != 0:
+        print_err("An error happened executing {cmd}, "
+                  "aborting...".format(cmd=' '.join(command)))
         sys.exit(2)
 
+    return returncode
 
 class Subscriptions(object):
     RHV_40_REPOS = [
