@@ -180,12 +180,6 @@ class UpgradeHelper(object):
         'yum', 'update', 'ovirt-engine-setup*', 'ovirt-engine-dwh-setup*'
     ]
 
-    LIST_RPM_PKGS = [
-        'env',
-        'LC_ALL=C',
-        'rpm', '-qa', '--queryformat=%{NAME}\n'
-    ]
-
     ENGINE_SETUP = [
         'env',
         'LC_ALL=C',
