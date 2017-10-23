@@ -27,7 +27,7 @@ def print_info(message):
     print("\033[92m\n[ INFO  ]\033[00m {msg}" .format(msg=message))
 
 
-def execute_cmd(command, print_output=True, env_shell=True):
+def execute_cmd(command, print_output=True, env_shell=False):
     """
     Execute command
 
@@ -35,28 +35,20 @@ def execute_cmd(command, print_output=True, env_shell=True):
         command - command to be executed, use ['cmd' 'argument']
         print_output - Print output after execution
         env_shell - Use the shell env, use True or False
-                    Using True for now as we want easy interaction with commands, like:
-                       - yum update and engine-setup
 
     Returns: output or exit in case of cmd with no success return
     """
 
     print_info('Executing: {cmd}'.format(cmd=' '.join(command)))
 
-    command = ' '.join(command)
     p = subprocess.Popen(
         command,
         shell=env_shell
     )
-    output, err = p.communicate()
+    returncode = p.wait()
 
-    if p.returncode != 0:
+    if returncode != 0:
         sys.exit(2)
-
-    if output and print_output:
-        print(output)
-
-    return output
 
 
 class Subscriptions(object):
@@ -93,20 +85,7 @@ class Subscriptions(object):
         rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
         rhsm_cmd.extend(['repos', '--list-enabled'])
 
-        output = execute_cmd(rhsm_cmd).splitlines()
-
-        for line in output:
-            if(':' in line):
-                key, value = line.split(':')
-                if key == 'Repo ID':
-                    self.repos.append(value)
-
-        # If not output found, print message
-        # join() to convert to str
-        if not self.repos:
-            return ''.join(output)
-
-        return self.repos
+        return execute_cmd(rhsm_cmd)
 
     def check_rhv_repos(self, version):
         '''
