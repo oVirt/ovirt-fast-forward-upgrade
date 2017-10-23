@@ -169,24 +169,27 @@ class Subscriptions(object):
 class UpgradeHelper(object):
 
     UPGRADE_CHECK = [
-        'env', 'LC_ALL=C', 'engine-upgrade-check'
+        'env',
+        'LC_ALL=C',
+        'engine-upgrade-check'
     ]
 
     YUM_UPDATE_CMD = [
         'env',
         'LC_ALL=C',
-        'yum',
-        'update',
-        'ovirt-engine-setup*',
-        'ovirt-engine-dwh-setup*'
+        'yum', 'update', 'ovirt-engine-setup*', 'ovirt-engine-dwh-setup*'
     ]
 
     LIST_RPM_PKGS = [
+        'env',
+        'LC_ALL=C',
         'rpm', '-qa', '--queryformat=%{NAME}\n'
     ]
 
     ENGINE_SETUP = [
-        'env', 'LC_ALL=C', 'engine-setup'
+        'env',
+        'LC_ALL=C',
+        'engine-setup'
     ]
 
     def __init__(self):
