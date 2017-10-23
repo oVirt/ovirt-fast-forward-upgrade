@@ -52,6 +52,7 @@ def execute_cmd(command, print_output=True, env_shell=False):
 
     return returncode
 
+
 class Subscriptions(object):
     RHV_40_REPOS = [
         "rhel-7-server-supplementary-rpms",
