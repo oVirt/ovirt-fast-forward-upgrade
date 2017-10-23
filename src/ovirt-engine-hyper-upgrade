@@ -27,16 +27,6 @@ def print_info(message):
     print("\033[92m\n[ INFO  ]\033[00m {msg}".format(msg=message))
 
 
-def print_err(message):
-    """
-    Print [ INFO ] in green before the message
-
-    Argument:
-        message - Message to be printed with INFO note
-    """
-    print("\033[91m\n[ ERROR  ]\033[00m {msg}" .format(msg=message))
-
-
 def execute_cmd(command, print_output=True, env_shell=False):
     """
     Execute command
@@ -58,8 +48,6 @@ def execute_cmd(command, print_output=True, env_shell=False):
     returncode = p.wait()
 
     if returncode != 0:
-        print_err("An error happened executing {cmd}, "
-                  "aborting...".format(cmd=' '.join(command)))
         sys.exit(2)
 
     return returncode
@@ -177,7 +165,7 @@ class UpgradeHelper(object):
     YUM_UPDATE_CMD = [
         'env',
         'LC_ALL=C',
-        'yum', 'update', 'ovirt-engine-setup*', 'ovirt-engine-dwh-setup*'
+        'yum', 'update'
     ]
 
     ENGINE_SETUP = [
@@ -203,10 +191,13 @@ class UpgradeHelper(object):
         Returns: Empty list or yum update output
         '''
 
-        print("Consulting ovirt-engine-setup and ovirt-engine-dwh"
-              "packages in the system for update...")
+        yum_update_engine_cmd = list(self.YUM_UPDATE_CMD)
+        yum_update_engine_cmd.extend(
+            'ovirt-engine-setup*',
+            'ovirt-engine-dwh-setup*'
+        )
 
-        return execute_cmd(self.YUM_UPDATE_CMD)
+        return execute_cmd(yum_update_engine_cmd)
 
     def run_engine_setup(self):
         '''
