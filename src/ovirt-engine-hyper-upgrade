@@ -24,6 +24,7 @@ class MsgType(Enum):
     WARNING = 2
     ERROR = 3
 
+
 def print_msg(message, type=None):
     """
     Print message
@@ -38,13 +39,36 @@ def print_msg(message, type=None):
     """
 
     if type == MsgType.ERROR:
-        print("\033[91m[ ERROR  ]\033[00m {msg}".format(msg=message))
+        print(("\033[91m[ ERROR  ]\033[00m {msg}".format(msg=message)))
     elif type == MsgType.INFO:
-        print("\033[92m[ INFO  ]\033[00m {msg}".format(msg=message))
+        print(("\033[92m[ INFO  ]\033[00m {msg}".format(msg=message)))
     elif type == MsgType.WARNING:
-        print("\033[93m[ WARNING  ]\033[00m {msg}".format(msg=message))
+        print(("\033[93m[ WARNING  ]\033[00m {msg}".format(msg=message)))
     else:
-        print("{m}".format(m=message))
+        print(("{m}".format(m=message)))
+
+
+def execute_cmd_check_output(command, env_shell=True):
+    """
+    Execute command returning output
+
+    Parameters:
+        command - command to be executed (str)
+
+    Returns: output from command or exit
+    """
+    print_msg(
+        'Executing: {cmd}'.format(cmd=command),
+        MsgType.INFO)
+
+    try:
+        output = subprocess.check_output(command, shell=env_shell)
+    except subprocess.CalledProcessError as e:
+        print((e.output))
+        sys.exit(2)
+
+    return output
+
 
 def execute_cmd(command, env_shell=False):
     """
@@ -59,8 +83,7 @@ def execute_cmd(command, env_shell=False):
 
     print_msg(
         'Executing: {cmd}'.format(cmd=' '.join(command)),
-         MsgType.INFO
-   )
+        MsgType.INFO)
 
     p = subprocess.Popen(
         command,
@@ -111,14 +134,11 @@ class Subscriptions(object):
         # Convert to str to be used with check_output
         rhsm_cmd = ' '.join(rhsm_cmd)
 
-        # We need to parse output of subscription-manager, using check_output 
-        try:
-            for line in subprocess.check_output(rhsm_cmd, shell=True).splitlines():
-                if('Repo ID:' in line):
-                    value = line.split('Repo ID:')[1]
-                    self.repos.append(value.strip())
-        except subprocess.CalledProcessError as e:
-            sys.exit(2)
+        # We need to parse output of subscription-manager, using check_output
+        for line in execute_cmd_check_output(rhsm_cmd).splitlines():
+            if('Repo ID:' in line):
+                value = line.split('Repo ID:')[1]
+                self.repos.append(value.strip())
 
         return self.repos
 
@@ -133,7 +153,7 @@ class Subscriptions(object):
 
         Returns: True or False
         '''
-        enabled = set(self.get_enabled_repos())
+        enabled = set(self.repos)
 
         if version == '4.0':
             required = set(self.RHV_40_REPOS)
@@ -146,10 +166,8 @@ class Subscriptions(object):
         missing = required.difference(enabled)
 
         if missing:
-            print_msg("The following repositories are required for {ver}".format(
-                          ver=version),
-                      MsgType.WARNING
-            )
+            print_msg("The following repositories are required "
+                      "for {ver}".format(ver=version), MsgType.WARNING)
             for repo in missing:
                 print((" - {repo}".format(repo=repo)))
 
@@ -251,7 +269,7 @@ class UpgradeHelper(object):
         Execute yum update
         Returns: command output
         '''
-        return execute_cmd(self.YUM_UPDATE_CMD)
+        return execute_cmd_check_output(self.YUM_UPDATE_CMD)
 
 
 def main():
@@ -305,7 +323,7 @@ def main():
 
     print_msg(
         'Collecting enabled repositories by subscription-manager...',
-         MsgType.INFO
+        MsgType.INFO
     )
     c.get_enabled_repos()
 
@@ -321,31 +339,50 @@ def main():
             c.check_rhv_repos(release['version'])
             u = UpgradeHelper()
             if u.is_upgrade_available():
-                print("An upgrade is available, upgrading to "
-                      "latest {version}.z".format(version=release['version']))
+                print(("An upgrade is available, upgrading to "
+                      "latest {version}.z".format(version=release['version'])))
 
                 u.upgrade_engine_setup()
                 u.run_engine_setup()
 
-                updated = u.update_system()
-                if "kernel" in updated:
-                    print("A kernel update has been installed, please "
-                          "reboot the system to complete the update.")
-                    return
+                # Using raw_input for now to keep compatible with python 2.x
+                ans = raw_input("Update the system? (Yes, No)? [Yes]")
+                if ans.lower() == 'no':
+                    print_msg(
+                        "The system won't be updated via yum...",
+                        MsgType.WARNING
+                    )
+                else:
+                    updated = u.update_system()
+                    if "kernel" in updated:
+                        print_msg("A kernel update has been installed, please "
+                                  "reboot the system to complete the update.",
+                                  MsgType.INFO)
+                        return
 
             c.repository(action='enable', repo=release['repo_to_enable'])
             u.upgrade_engine_setup()
             u.run_engine_setup()
-            updated = u.update_system()
+
+            # Using raw_input for now to keep compatible with python 2.x
+            ans = raw_input("Update the system? (Yes, No)? [Yes]")
+            if ans.lower() == 'no':
+                print_msg(
+                    "The system won't be updated via yum...",
+                    MsgType.WARNING
+                )
+            else:
+                u.update_system()
+
             c.repository(action='disable', repo=release['repo_to_disable'])
 
             print("Please reboot the system to complete the update.")
-            print("Once rebooted, please change the cluster and datacenter "
-                  "compatibility level to {version}.\n"
-                  "See Chapter 4, Post-Upgrade Tasks: "
-                  "https://access.redhat.com/documentation/en/red-hat-virtual"
-                  "ization/{version}/single/upgrade-guide#chap-"
-                  "Post-Upgrade_Tasks".format(version=release['version']))
+            print(("Once rebooted, please change the cluster and datacenter "
+                   "compatibility level to {version}.\n"
+                   "See Chapter 4, Post-Upgrade Tasks: "
+                   "https://access.redhat.com/documentation/en/red-hat-virtual"
+                   "ization/{version}/single/upgrade-guide#chap-"
+                   "Post-Upgrade_Tasks".format(version=release['version'])))
 
     return 0
 
