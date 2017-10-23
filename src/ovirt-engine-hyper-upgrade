@@ -270,8 +270,7 @@ def main():
     c = Subscriptions()
 
     if args.list_enabled_repos:
-        print((c.get_enabled_repos()))
-        return 0
+        return c.get_enabled_repos()
 
     if args.check_upgrade_rhv_4_0:
         version = "4.0"
