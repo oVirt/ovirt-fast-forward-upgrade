@@ -16,16 +16,35 @@ import argparse
 import subprocess
 import sys
 
+from enum import Enum
 
-def print_info(message):
+
+class MsgType(Enum):
+    INFO = 1
+    WARNING = 2
+    ERROR = 3
+
+def print_msg(message, type=None):
     """
-    Print [ INFO ] in green before the message
+    Print message
+
+    Parameters:
+       type
+           INFO - The message will be print as green
+           WARNING - The message will be print as yellow
 
     Argument:
         message - Message to be printed with INFO note
     """
-    print("\033[92m\n[ INFO  ]\033[00m {msg}".format(msg=message))
 
+    if type == MsgType.ERROR:
+        print("\033[91m[ ERROR  ]\033[00m {msg}".format(msg=message))
+    elif type == MsgType.INFO:
+        print("\033[92m[ INFO  ]\033[00m {msg}".format(msg=message))
+    elif type == MsgType.WARNING:
+        print("\033[93m[ WARNING  ]\033[00m {msg}".format(msg=message))
+    else:
+        print("{m}".format(m=message))
 
 def execute_cmd(command, print_output=True, env_shell=False):
     """
@@ -39,7 +58,10 @@ def execute_cmd(command, print_output=True, env_shell=False):
     Returns: return code or exit in case of failure
     """
 
-    print_info('Executing: {cmd}'.format(cmd=' '.join(command)))
+    print_msg(
+        'Executing: {cmd}'.format(cmd=' '.join(command)),
+         MsgType.INFO
+   )
 
     p = subprocess.Popen(
         command,
@@ -80,14 +102,26 @@ class Subscriptions(object):
         '''
         Get enabled repos
 
-        Returns: All repos or subsription-manager error output
+        Returns: All enabled repos id or empyt list
         '''
         self.repos = []
 
         rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
         rhsm_cmd.extend(['repos', '--list-enabled'])
 
-        return execute_cmd(rhsm_cmd)
+        # Convert to str to be used with check_output
+        rhsm_cmd = ' '.join(rhsm_cmd)
+
+        # We need to parse output of subscription-manager, using check_output 
+        try:
+            for line in subprocess.check_output(rhsm_cmd, shell=True).splitlines():
+                if('Repo ID:' in line):
+                    value = line.split('Repo ID:')[1]
+                    self.repos.append(value.strip())
+        except subprocess.CalledProcessError as e:
+            sys.exit(2)
+
+        return self.repos
 
     def check_rhv_repos(self, version):
         '''
@@ -100,7 +134,7 @@ class Subscriptions(object):
 
         Returns: True or False
         '''
-        enabled = set(self.repos)
+        enabled = set(self.get_enabled_repos())
 
         if version == '4.0':
             required = set(self.RHV_40_REPOS)
@@ -111,15 +145,21 @@ class Subscriptions(object):
 
         unknown = enabled.difference(required)
         missing = required.difference(enabled)
+
         if missing:
-            print("The following repositories are required for {ver}".format(
-                    ver=version))
+            print_msg("The following repositories are required for {ver}".format(
+                          ver=version),
+                      MsgType.WARNING
+            )
             for repo in missing:
                 print((" - {repo}".format(repo=repo)))
 
         if unknown:
-            print("The following repositories are enabled and not supported "
-                  "for RHV {ver}".format(ver=version))
+            print_msg("The following repositories are enabled and not the "
+                      "main repositories for RHV {ver}".format(ver=version),
+                      MsgType.WARNING)
+            for repo in unknown:
+                print((" - {repo}".format(repo=repo)))
 
         if missing or unknown:
             return False
@@ -193,10 +233,10 @@ class UpgradeHelper(object):
         '''
 
         yum_update_engine_cmd = list(self.YUM_UPDATE_CMD)
-        yum_update_engine_cmd.extend(
+        yum_update_engine_cmd.extend([
             'ovirt-engine-setup*',
             'ovirt-engine-dwh-setup*'
-        )
+        ])
 
         return execute_cmd(yum_update_engine_cmd)
 
@@ -257,12 +297,6 @@ def main():
              'Also enable 4.2 channels',
     )
 
-    parser.add_argument(
-        '--list-enabled-repos',
-        action='store_true',
-        help='List all enabled repositories',
-    )
-
     if len(sys.argv) <= 1:
         parser.print_usage()
         sys.exit(1)
@@ -270,8 +304,11 @@ def main():
     args = parser.parse_args()
     c = Subscriptions()
 
-    if args.list_enabled_repos:
-        return c.get_enabled_repos()
+    print_msg(
+        'Collecting enabled repositories by subscription-manager...',
+         MsgType.INFO
+    )
+    c.get_enabled_repos()
 
     if args.check_upgrade_rhv_4_0:
         version = "4.0"
