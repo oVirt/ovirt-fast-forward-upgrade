@@ -94,7 +94,7 @@ class Subscriptions(object):
         Check repositories for RHV
 
         Parameters:
-            version: RHEV version to check, example of values (str):
+            version: RHV version to check, example of values (str):
                 4.0
                 4.1
 
