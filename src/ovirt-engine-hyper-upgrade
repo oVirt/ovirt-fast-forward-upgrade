@@ -127,9 +127,11 @@ class Base(logging.Handler):
         Returns: return code or exit in case of failure
         """
 
+        cmd_str = ' '.join(command)
         self.print_msg(
-            'Executing: {cmd}'.format(cmd=' '.join(command)),
-            MsgType.INFO)
+            'Executing: {cmd}'.format(cmd=cmd_str),
+            MsgType.INFO
+        )
 
         p = subprocess.Popen(
             command,
@@ -138,6 +140,10 @@ class Base(logging.Handler):
         returncode = p.wait()
 
         if returncode != 0:
+            self.logger.debug(
+                'Exiting {cmd}, return code: {ret}'.format(
+                    cmd=cmd_str, ret=returncode)
+            )
             sys.exit(2)
 
         return returncode
