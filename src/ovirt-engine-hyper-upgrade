@@ -333,6 +333,7 @@ def main():
     logger.debug('----------------------')
     logger.debug('Starting')
     logger.debug('----------------------')
+
     # Dictionary that keep the release data like:
     # version, repo_to_enable, repo_to_disable
     check_releases = {}
