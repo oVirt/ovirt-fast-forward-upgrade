@@ -13,6 +13,7 @@
 #  limitations under the License.
 #
 import argparse
+import logging
 import subprocess
 import sys
 
@@ -25,79 +26,124 @@ class MsgType(Enum):
     ERROR = 3
 
 
-def print_msg(message, type=None):
+def _configure_logging():
     """
-    Print message
-
-    Parameters:
-       type
-           INFO - The message will be print as green
-           WARNING - The message will be print as yellow
-
-    Argument:
-        message - Message to be printed with INFO note
+    The logging settings
+    Saving log in: /var/log/engine-hyper-upgrade.log
     """
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
 
-    if type == MsgType.ERROR:
-        print(("\033[91m[ ERROR  ]\033[00m {msg}".format(msg=message)))
-    elif type == MsgType.INFO:
-        print(("\033[92m[ INFO  ]\033[00m {msg}".format(msg=message)))
-    elif type == MsgType.WARNING:
-        print(("\033[93m[ WARNING  ]\033[00m {msg}".format(msg=message)))
-    else:
-        print(("{m}".format(m=message)))
+    fh = logging.FileHandler("/var/log/engine-hyper-upgrade.log")
+    fh.setLevel(logging.DEBUG)
+    debug_fmt = logging.Formatter("%(asctime)s %(message)s",
+                                  "%m/%d/%Y %I:%M:%S %p")
 
+    ih = logging.StreamHandler(stream=sys.stdout)
+    ih.setLevel(logging.INFO)
+    info_fmt = logging.Formatter("%(message)s",
+                                 "%m/%d/%Y %I:%M:%S %p")
 
-def execute_cmd_check_output(command, env_shell=True):
-    """
-    Execute command returning output
+    fh.setFormatter(debug_fmt)
+    ih.setFormatter(info_fmt)
 
-    Parameters:
-        command - command to be executed (str)
+    logger.addHandler(fh)
+    logger.addHandler(ih)
 
-    Returns: output from command or exit
-    """
-    print_msg(
-        'Executing: {cmd}'.format(cmd=command),
-        MsgType.INFO)
-
-    try:
-        output = subprocess.check_output(command, shell=env_shell)
-    except subprocess.CalledProcessError as e:
-        print((e.output))
-        sys.exit(2)
-
-    return output
+    logging.captureWarnings(True)
 
 
-def execute_cmd(command, env_shell=False):
-    """
-    Execute command
+class Base(logging.Handler):
+    def __init__(self):
+        super(Base, self).__init__()
+        self.logger = logging.getLogger(__name__)
 
-    Parameters:
-        command - command to be executed, use ['cmd' 'argument']
-        env_shell - Use the shell env, use True or False
+    def print_msg(self, message, type=None):
+        """
+        Print message
 
-    Returns: return code or exit in case of failure
-    """
+        Parameters:
+           type
+               INFO - The message will be print as green
+               WARNING - The message will be print as yellow
 
-    print_msg(
-        'Executing: {cmd}'.format(cmd=' '.join(command)),
-        MsgType.INFO)
+        Argument:
+            message - Message to be printed with INFO note
+        """
 
-    p = subprocess.Popen(
-        command,
-        shell=env_shell
-    )
-    returncode = p.wait()
+        if type == MsgType.ERROR:
+            self.logger.error((
+                "\033[91m[ ERROR  ]\033[00m {msg}".format(msg=message)
+            ))
+        elif type == MsgType.INFO:
+            self.logger.info((
+                "\033[92m[ INFO  ]\033[00m {msg}".format(msg=message)
+            ))
+        elif type == MsgType.WARNING:
+            self.logger.info((
+                "\033[93m[ WARNING  ]\033[00m {msg}".format(msg=message)
+            ))
+        else:
+            self.logger.info((
+                "{m}".format(m=message)
+            ))
 
-    if returncode != 0:
-        sys.exit(2)
+    def execute_cmd_check_output(self, command, env_shell=True):
+        """
+        Execute command returning output
 
-    return returncode
+        Parameters:
+            command - command to be executed (str)
+
+        Returns: output from command or exit
+        """
+        self.print_msg(
+            'Executing: {cmd}'.format(cmd=command),
+            MsgType.INFO
+        )
+
+        try:
+            output = subprocess.check_output(command, shell=env_shell)
+        except subprocess.CalledProcessError as e:
+            self.print_msg(
+                e.output,
+                MsgType.ERROR
+            )
+            sys.exit(2)
+
+        self.logger.debug(output)
+
+        return output
+
+    def execute_cmd(self, command, env_shell=False):
+        """
+        Execute command
+
+        Parameters:
+            command - command to be executed, use ['cmd' 'argument']
+            env_shell - Use the shell env, use True or False
+
+        Returns: return code or exit in case of failure
+        """
+
+        self.print_msg(
+            'Executing: {cmd}'.format(cmd=' '.join(command)),
+            MsgType.INFO)
+
+        p = subprocess.Popen(
+            command,
+            shell=env_shell
+        )
+        returncode = p.wait()
+
+        if returncode != 0:
+            sys.exit(2)
+
+        return returncode
 
 
-class Subscriptions(object):
+class Subscriptions(Base):
     RHV_40_REPOS = [
         "rhel-7-server-supplementary-rpms",
         "rhel-7-server-rpms",
@@ -134,8 +180,13 @@ class Subscriptions(object):
         # Convert to str to be used with check_output
         rhsm_cmd = ' '.join(rhsm_cmd)
 
+        self.print_msg(
+            'Collecting enabled repositories by subscription-manager...',
+            MsgType.INFO
+        )
+
         # We need to parse output of subscription-manager, using check_output
-        for line in execute_cmd_check_output(rhsm_cmd).splitlines():
+        for line in self.execute_cmd_check_output(rhsm_cmd).splitlines():
             if('Repo ID:' in line):
                 value = line.split('Repo ID:')[1]
                 self.repos.append(value.strip())
@@ -166,17 +217,18 @@ class Subscriptions(object):
         missing = required.difference(enabled)
 
         if missing:
-            print_msg("The following repositories are required "
-                      "for {ver}".format(ver=version), MsgType.WARNING)
+            self.print_msg("The following repositories are required "
+                           "for {ver}".format(ver=version), MsgType.WARNING)
             for repo in missing:
-                print((" - {repo}".format(repo=repo)))
+                self.print_msg(" - {repo}".format(repo=repo))
 
         if unknown:
-            print_msg("The following repositories are enabled and not the "
-                      "main repositories for RHV {ver}".format(ver=version),
-                      MsgType.WARNING)
+            self.print_msg(
+                "The following repositories are enabled and not the "
+                "main repositories for RHV {ver}".format(ver=version),
+                MsgType.WARNING)
             for repo in unknown:
-                print((" - {repo}".format(repo=repo)))
+                self.print_msg(" - {repo}".format(repo=repo))
 
         if missing or unknown:
             return False
@@ -209,10 +261,10 @@ class Subscriptions(object):
 
         rhsm_cmd.extend(action)
 
-        return execute_cmd(rhsm_cmd)
+        return self.execute_cmd(rhsm_cmd)
 
 
-class UpgradeHelper(object):
+class UpgradeHelper(Base):
 
     UPGRADE_CHECK = [
         'env',
@@ -240,7 +292,7 @@ class UpgradeHelper(object):
         Execute engine-upgrade-check
         Returns: command output
         '''
-        return execute_cmd(self.UPGRADE_CHECK)
+        return self.execute_cmd(self.UPGRADE_CHECK)
 
     def upgrade_engine_setup(self):
         '''
@@ -255,28 +307,32 @@ class UpgradeHelper(object):
             'ovirt-engine-dwh-setup*'
         ])
 
-        return execute_cmd(yum_update_engine_cmd)
+        return self.execute_cmd(yum_update_engine_cmd)
 
     def run_engine_setup(self):
         '''
         Execute engine-setup
         Returns: command output
         '''
-        return execute_cmd(self.ENGINE_SETUP)
+        return self.execute_cmd(self.ENGINE_SETUP)
 
     def update_system(self):
         '''
         Execute yum update
         Returns: command output
         '''
-        return execute_cmd(self.YUM_UPDATE_CMD)
+        return self.execute_cmd(self.YUM_UPDATE_CMD)
 
 
 def main():
     '''
     A tool to help users upgrade RHV environments
     '''
+    logger = logging.getLogger(__name__)
 
+    logger.debug('----------------------')
+    logger.debug('Starting')
+    logger.debug('----------------------')
     # Dictionary that keep the release data like:
     # version, repo_to_enable, repo_to_disable
     check_releases = {}
@@ -321,10 +377,6 @@ def main():
     args = parser.parse_args()
     c = Subscriptions()
 
-    print_msg(
-        'Collecting enabled repositories by subscription-manager...',
-        MsgType.INFO
-    )
     c.get_enabled_repos()
 
     if args.check_upgrade_rhv_4_0:
@@ -334,13 +386,14 @@ def main():
     else:
         raise RuntimeError("Unable to detect the RHV version to check!")
 
+    u = UpgradeHelper()
     for release in check_releases['repos']:
         if release['version'] == version:
             c.check_rhv_repos(release['version'])
-            u = UpgradeHelper()
             if u.is_upgrade_available():
-                print(("An upgrade is available, upgrading to "
-                      "latest {version}.z".format(version=release['version'])))
+                logger.info("An upgrade is available, upgrading to "
+                            "latest {version}.z".format(
+                                version=release['version']))
 
                 u.upgrade_engine_setup()
                 u.run_engine_setup()
@@ -355,18 +408,21 @@ def main():
 
             c.repository(action='disable', repo=release['repo_to_disable'])
 
-            print("Please reboot the system to complete the update.")
-            print(("Once rebooted, please change the cluster and datacenter "
-                   "compatibility level to {version}.\n"
-                   "See Chapter 4, Post-Upgrade Tasks: "
-                   "https://access.redhat.com/documentation/en/red-hat-virtual"
-                   "ization/{version}/single/upgrade-guide#chap-"
-                   "Post-Upgrade_Tasks".format(version=release['version'])))
+            logger.info("Please reboot the system to complete the update.")
+            logger.info((
+                "Once rebooted, please change the cluster and datacenter "
+                "compatibility level to {version}.\n"
+                "See Chapter 4, Post-Upgrade Tasks: "
+                "https://access.redhat.com/documentation/en/red-hat-virtual"
+                "ization/{version}/single/upgrade-guide#chap-"
+                "Post-Upgrade_Tasks".format(version=release['version'])
+            ))
 
     return 0
 
 
 if __name__ == '__main__':
+    _configure_logging()
     sys.exit(main())
 
 # vim: expandtab tabstop=4 shiftwidth=4
