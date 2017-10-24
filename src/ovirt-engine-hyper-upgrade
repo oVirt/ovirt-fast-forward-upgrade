@@ -345,34 +345,13 @@ def main():
                 u.upgrade_engine_setup()
                 u.run_engine_setup()
 
-                # Using raw_input for now to keep compatible with python 2.x
-                ans = raw_input("Update the system? (Yes, No)? [Yes]")
-                if ans.lower() == 'no':
-                    print_msg(
-                        "The system won't be updated via yum...",
-                        MsgType.WARNING
-                    )
-                else:
-                    updated = u.update_system()
-                    if "kernel" in updated:
-                        print_msg("A kernel update has been installed, please "
-                                  "reboot the system to complete the update.",
-                                  MsgType.INFO)
-                        return
+                u.update_system()
 
             c.repository(action='enable', repo=release['repo_to_enable'])
             u.upgrade_engine_setup()
             u.run_engine_setup()
 
-            # Using raw_input for now to keep compatible with python 2.x
-            ans = raw_input("Update the system? (Yes, No)? [Yes]")
-            if ans.lower() == 'no':
-                print_msg(
-                    "The system won't be updated via yum...",
-                    MsgType.WARNING
-                )
-            else:
-                u.update_system()
+            u.update_system()
 
             c.repository(action='disable', repo=release['repo_to_disable'])
 
