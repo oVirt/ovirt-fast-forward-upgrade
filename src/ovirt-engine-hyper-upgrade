@@ -1,0 +1,435 @@
+#!/usr/bin/python
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+import argparse
+import logging
+import subprocess
+import sys
+
+from enum import Enum
+
+
+class MsgType(Enum):
+    INFO = 1
+    WARNING = 2
+    ERROR = 3
+
+
+def _configure_logging():
+    """
+    The logging settings
+    Saving log in: /var/log/engine-hyper-upgrade.log
+    """
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    fh = logging.FileHandler("/var/log/engine-hyper-upgrade.log")
+    fh.setLevel(logging.DEBUG)
+    debug_fmt = logging.Formatter("%(asctime)s %(message)s",
+                                  "%m/%d/%Y %I:%M:%S %p")
+
+    ih = logging.StreamHandler(stream=sys.stdout)
+    ih.setLevel(logging.INFO)
+    info_fmt = logging.Formatter("%(message)s",
+                                 "%m/%d/%Y %I:%M:%S %p")
+
+    fh.setFormatter(debug_fmt)
+    ih.setFormatter(info_fmt)
+
+    logger.addHandler(fh)
+    logger.addHandler(ih)
+
+    logging.captureWarnings(True)
+
+
+class Base(logging.Handler):
+    def __init__(self):
+        super(Base, self).__init__()
+        self.logger = logging.getLogger(__name__)
+
+    def print_msg(self, message, type=None):
+        """
+        Print message
+
+        Parameters:
+           type
+               INFO - The message will be print as green
+               WARNING - The message will be print as yellow
+
+        Argument:
+            message - Message to be printed with INFO note
+        """
+
+        if type == MsgType.ERROR:
+            self.logger.error((
+                "\033[91m[ ERROR  ]\033[00m {msg}".format(msg=message)
+            ))
+        elif type == MsgType.INFO:
+            self.logger.info((
+                "\033[92m[ INFO  ]\033[00m {msg}".format(msg=message)
+            ))
+        elif type == MsgType.WARNING:
+            self.logger.info((
+                "\033[93m[ WARNING  ]\033[00m {msg}".format(msg=message)
+            ))
+        else:
+            self.logger.info((
+                "{m}".format(m=message)
+            ))
+
+    def execute_cmd_check_output(self, command, env_shell=True):
+        """
+        Execute command returning output
+
+        Parameters:
+            command - command to be executed (str)
+
+        Returns: output from command or exit
+        """
+        self.print_msg(
+            'Executing: {cmd}'.format(cmd=command),
+            MsgType.INFO
+        )
+
+        try:
+            output = subprocess.check_output(command, shell=env_shell)
+        except subprocess.CalledProcessError as e:
+            self.print_msg(
+                e.output,
+                MsgType.ERROR
+            )
+            sys.exit(2)
+
+        self.logger.debug(output)
+
+        return output
+
+    def execute_cmd(self, command, env_shell=False):
+        """
+        Execute command
+
+        Parameters:
+            command - command to be executed, use ['cmd' 'argument']
+            env_shell - Use the shell env, use True or False
+
+        Returns: return code or exit in case of failure
+        """
+
+        cmd_str = ' '.join(command)
+        self.print_msg(
+            'Executing: {cmd}'.format(cmd=cmd_str),
+            MsgType.INFO
+        )
+
+        p = subprocess.Popen(
+            command,
+            shell=env_shell
+        )
+        returncode = p.wait()
+
+        if returncode != 0:
+            self.logger.debug(
+                'Exiting {cmd}, return code: {ret}'.format(
+                    cmd=cmd_str, ret=returncode)
+            )
+            sys.exit(2)
+
+        return returncode
+
+
+class Subscriptions(Base):
+    RHV_40_REPOS = [
+        "rhel-7-server-supplementary-rpms",
+        "rhel-7-server-rpms",
+        "rhel-7-server-rhv-4.0-rpms",
+        "jb-eap-7-for-rhel-7-server-rpms"
+    ]
+
+    RHV_41_REPOS = [
+        "rhel-7-server-supplementary-rpms",
+        "rhel-7-server-rpms",
+        "rhel-7-server-rhv-4.1-rpms",
+        "jb-eap-7-for-rhel-7-server-rpms"
+    ]
+
+    SUBSCRIPTION_MANAGER = [
+        'env', 'LC_ALL=C', 'subscription-manager'
+    ]
+
+    def __init__(self):
+        super(Subscriptions, self).__init__()
+        self.repos = []
+
+    def get_enabled_repos(self):
+        '''
+        Get enabled repos
+
+        Returns: All enabled repos id or empyt list
+        '''
+        self.repos = []
+
+        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
+        rhsm_cmd.extend(['repos', '--list-enabled'])
+
+        # Convert to str to be used with check_output
+        rhsm_cmd = ' '.join(rhsm_cmd)
+
+        self.print_msg(
+            'Collecting enabled repositories by subscription-manager...',
+            MsgType.INFO
+        )
+
+        # We need to parse output of subscription-manager, using check_output
+        for line in self.execute_cmd_check_output(rhsm_cmd).splitlines():
+            if('Repo ID:' in line):
+                value = line.split('Repo ID:')[1]
+                self.repos.append(value.strip())
+
+        return self.repos
+
+    def check_rhv_repos(self, version):
+        '''
+        Check repositories for RHV
+
+        Parameters:
+            version: RHV version to check, example of values (str):
+                4.0
+                4.1
+
+        Returns: True or False
+        '''
+        enabled = set(self.repos)
+
+        if version == '4.0':
+            required = set(self.RHV_40_REPOS)
+        elif version == '4.1':
+            required = set(self.RHV_41_REPOS)
+        else:
+            raise RuntimeError('Version parameters not supported!')
+
+        unknown = enabled.difference(required)
+        missing = required.difference(enabled)
+
+        if missing:
+            self.print_msg("The following repositories are required "
+                           "for {ver}".format(ver=version), MsgType.WARNING)
+            for repo in missing:
+                self.print_msg(" - {repo}".format(repo=repo))
+
+        if unknown:
+            self.print_msg(
+                "The following repositories are enabled and not the "
+                "main repositories for RHV {ver}".format(ver=version),
+                MsgType.WARNING)
+            for repo in unknown:
+                self.print_msg(" - {repo}".format(repo=repo))
+
+        if missing or unknown:
+            return False
+
+        return True
+
+    def repository(self, action, repo):
+        '''
+        Enable repository using subscription-manager
+        Parameters:
+            action
+                enable  - Enable channel
+                disable - Disable channel
+
+            repo
+                repository name (str)
+        Returns: command output
+        '''
+
+        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
+
+        if 'enable' == action:
+            action = ['repos', '--enable', repo]
+        elif 'disable' == action:
+            action = ['repos', '--disable', repo]
+        else:
+            raise RuntimeError(
+                "Unknown action [%s] for repositories!" % action
+            )
+
+        rhsm_cmd.extend(action)
+
+        return self.execute_cmd(rhsm_cmd)
+
+
+class UpgradeHelper(Base):
+
+    UPGRADE_CHECK = [
+        'env',
+        'LC_ALL=C',
+        'engine-upgrade-check'
+    ]
+
+    YUM_UPDATE_CMD = [
+        'env',
+        'LC_ALL=C',
+        'yum', 'update'
+    ]
+
+    ENGINE_SETUP = [
+        'env',
+        'LC_ALL=C',
+        'engine-setup'
+    ]
+
+    def __init__(self):
+        super(UpgradeHelper, self).__init__()
+
+    def is_upgrade_available(self):
+        '''
+        Execute engine-upgrade-check
+        Returns: command output
+        '''
+        return self.execute_cmd(self.UPGRADE_CHECK)
+
+    def upgrade_engine_setup(self):
+        '''
+        Look for packages with ovirt-engine-setup* name
+        and execute yum update
+        Returns: Empty list or yum update output
+        '''
+
+        yum_update_engine_cmd = list(self.YUM_UPDATE_CMD)
+        yum_update_engine_cmd.extend([
+            'ovirt-engine-setup*',
+            'ovirt-engine-dwh-setup*'
+        ])
+
+        return self.execute_cmd(yum_update_engine_cmd)
+
+    def run_engine_setup(self):
+        '''
+        Execute engine-setup
+        Returns: command output
+        '''
+        return self.execute_cmd(self.ENGINE_SETUP)
+
+    def update_system(self):
+        '''
+        Execute yum update
+        Returns: command output
+        '''
+        return self.execute_cmd(self.YUM_UPDATE_CMD)
+
+
+def main():
+    '''
+    A tool to help users upgrade RHV environments
+    '''
+    logger = logging.getLogger(__name__)
+
+    logger.debug('----------------------')
+    logger.debug('Starting')
+    logger.debug('----------------------')
+
+    # Dictionary that keep the release data like:
+    # version, repo_to_enable, repo_to_disable
+    check_releases = {}
+    check_releases['repos'] = [
+        {
+            'version': '4.0',
+            'repo_to_enable': 'rhel-7-server-rhv-4.1-rpms',
+            'repo_to_disable': 'rhel-7-server-rhv-4.0-rpms'
+        },
+        {
+            'version': '4.1',
+            'repo_to_enable': 'rhel-7-server-rhv-4.2-rpms',
+            'repo_to_disable': 'rhel-7-server-rhv-4.1-rpms'
+        }
+    ]
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description='Tool to upgrade RHV environments',
+        epilog='Example of use:\n%(prog)s '
+                    '--check-upgrade-rhv-4-0'
+    )
+
+    parser.add_argument(
+        '--check-upgrade-rhv-4-0',
+        action='store_true',
+        help='Check if RHV 4.0 channels have upgrade available. '
+             'Also enable 4.1 channels',
+    )
+
+    parser.add_argument(
+        '--check-upgrade-rhv-4-1',
+        action='store_true',
+        help='Check if RHV 4.1 channels have zstream upgrade available. '
+             'Also enable 4.2 channels',
+    )
+
+    if len(sys.argv) <= 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    args = parser.parse_args()
+    c = Subscriptions()
+
+    c.get_enabled_repos()
+
+    if args.check_upgrade_rhv_4_0:
+        version = "4.0"
+    elif args.check_upgrade_rhv_4_1:
+        version = "4.1"
+    else:
+        raise RuntimeError("Unable to detect the RHV version to check!")
+
+    u = UpgradeHelper()
+    for release in check_releases['repos']:
+        if release['version'] == version:
+            c.check_rhv_repos(release['version'])
+            if u.is_upgrade_available():
+                logger.info("An upgrade is available, upgrading to "
+                            "latest {version}.z".format(
+                                version=release['version']))
+
+                u.upgrade_engine_setup()
+                u.run_engine_setup()
+
+                u.update_system()
+
+            c.repository(action='enable', repo=release['repo_to_enable'])
+            u.upgrade_engine_setup()
+            u.run_engine_setup()
+
+            u.update_system()
+
+            c.repository(action='disable', repo=release['repo_to_disable'])
+
+            logger.info("Please reboot the system to complete the update.")
+            logger.info((
+                "Once rebooted, please change the cluster and datacenter "
+                "compatibility level to {version}.\n"
+                "See Chapter 4, Post-Upgrade Tasks: "
+                "https://access.redhat.com/documentation/en/red-hat-virtual"
+                "ization/{version}/single/upgrade-guide#chap-"
+                "Post-Upgrade_Tasks".format(version=release['version'])
+            ))
+
+    return 0
+
+
+if __name__ == '__main__':
+    _configure_logging()
+    sys.exit(main())
+
+# vim: expandtab tabstop=4 shiftwidth=4
