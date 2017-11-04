@@ -141,10 +141,9 @@ class Base(logging.Handler):
 
         if returncode != 0:
             self.logger.debug(
-                'Exiting {cmd}, return code: {ret}'.format(
+                'ATTENTION: {cmd}, return code: {ret}'.format(
                     cmd=cmd_str, ret=returncode)
             )
-            sys.exit(2)
 
         return returncode
 
@@ -301,15 +300,17 @@ class UpgradeHelper(Base):
     def is_upgrade_available(self):
         '''
         Execute engine-upgrade-check
-        Returns: command output
+        Returns: command return code, engine-upgrade-check returns 1 in case
+        there is no upgrade. It's not like yum command that returns 1 only
+        in case of error. So we return the returncode to the caller to be able
+        to decide if there is upgrade or not to take the next action.
         '''
         return self.execute_cmd(self.UPGRADE_CHECK)
 
     def upgrade_engine_setup(self):
         '''
         Look for packages with ovirt-engine-setup* name
-        and execute yum update
-        Returns: Empty list or yum update output
+        and execute yum update. In case of failure, exit.
         '''
 
         yum_update_engine_cmd = list(self.YUM_UPDATE_CMD)
@@ -318,21 +319,36 @@ class UpgradeHelper(Base):
             'ovirt-engine-dwh-setup*'
         ])
 
-        return self.execute_cmd(yum_update_engine_cmd)
+        if self.execute_cmd(yum_update_engine_cmd) != 0:
+            self.print_msg(
+                'Aborting.. yum update ovirt-engine-setup* '
+                'ovirt-engine-dwh-setup* failed...',
+                MsgType.ERROR
+            )
+            sys.exit(2)
 
     def run_engine_setup(self):
         '''
-        Execute engine-setup
-        Returns: command output
+        Execute engine-setup or exit in case of failure
         '''
-        return self.execute_cmd(self.ENGINE_SETUP)
+        if self.execute_cmd(self.ENGINE_SETUP) != 0:
+            self.print_msg(
+                'Aborting.. engine-setup failed...',
+                MsgType.ERROR
+            )
+            sys.exit(2)
+
 
     def update_system(self):
         '''
-        Execute yum update
-        Returns: command output
+        Execute yum update or exit in case of failure
         '''
-        return self.execute_cmd(self.YUM_UPDATE_CMD)
+        if self.execute_cmd(self.YUM_UPDATE_CMD) != 0:
+            self.print_msg(
+                'Aborting.. yum update failed...',
+                MsgType.ERROR
+            )
+            sys.exit(2)
 
 
 def main():
@@ -402,7 +418,9 @@ def main():
     for release in check_releases['repos']:
         if release['version'] == version:
             c.check_rhv_repos(release['version'])
-            if u.is_upgrade_available():
+
+            # If there is no update, engine-upgrade-check return 1
+            if u.is_upgrade_available() != 1:
                 logger.info("An upgrade is available, upgrading to "
                             "latest {version}.z".format(
                                 version=release['version']))
@@ -410,7 +428,8 @@ def main():
                 u.upgrade_engine_setup()
                 u.run_engine_setup()
 
-                u.update_system()
+
+            u.update_system()
 
             c.repository(action='enable', repo=release['repo_to_enable'])
             u.upgrade_engine_setup()
