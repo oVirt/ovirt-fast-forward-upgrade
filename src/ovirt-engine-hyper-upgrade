@@ -113,12 +113,15 @@ class Base(logging.Handler):
                 "{m}".format(m=message)
             ))
 
-    def execute_cmd_check_output(self, command, env_shell=True):
+    def execute_cmd_check_output(self, command, shell=True):
         """
         Execute command returning output
 
         Parameters:
-            command - command to be executed (str)
+            command - command to be executed (str) as shell will be True
+            shell - True or False
+                    If shell is True, the specified command will be
+                    executed through the shell
 
         Returns: output from command or exit
         """
@@ -128,7 +131,7 @@ class Base(logging.Handler):
         )
 
         try:
-            output = subprocess.check_output(command, shell=env_shell)
+            output = subprocess.check_output(command, shell=shell)
         except subprocess.CalledProcessError as e:
             self.print_msg(
                 e.output,
@@ -140,13 +143,15 @@ class Base(logging.Handler):
 
         return output
 
-    def execute_cmd(self, command, env_shell=False):
+    def execute_cmd(self, command, shell=False):
         """
         Execute command
 
         Parameters:
             command - command to be executed, use ['cmd' 'argument']
-            env_shell - Use the shell env, use True or False
+            shell - True or False
+                    If shell is True, the specified command will be
+                    executed through the shell
 
         Returns: return code or exit in case of failure
         """
@@ -159,7 +164,7 @@ class Base(logging.Handler):
 
         p = subprocess.Popen(
             command,
-            shell=env_shell
+            shell=shell
         )
         returncode = p.wait()
 
@@ -173,10 +178,6 @@ class Base(logging.Handler):
 
 
 class Subscriptions(Base):
-    SUBSCRIPTION_MANAGER = [
-        'env', 'LC_ALL=C', 'subscription-manager'
-    ]
-
     def __init__(self):
         super(Subscriptions, self).__init__()
         self.repos = []
@@ -185,14 +186,19 @@ class Subscriptions(Base):
         '''
         Get enabled repos
 
-        Returns: All enabled repos id or empyt list
+        Returns: All enabled repos id or empty list
         '''
         self.repos = []
 
-        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
-        rhsm_cmd.extend(['repos', '--list-enabled'])
+        rhsm_cmd = [
+            'env',
+            'LC_ALL=C',
+            'subscription-manager',
+            'repos',
+            '--list-enabled'
+        ]
 
-        # Convert to str to be used with check_output
+        # Convert to str to be used with check_output and shell=True
         rhsm_cmd = ' '.join(rhsm_cmd)
 
         self.print_msg(
