@@ -14,6 +14,7 @@
 #
 import argparse
 import logging
+import os
 import subprocess
 import sys
 
@@ -494,6 +495,11 @@ def main():
 
 
 if __name__ == '__main__':
+
+    if os.geteuid() != 0:
+        sys.exit("User root is required for this program manage "
+                 "the subscriptions in this system!")
+
     _configure_logging()
     sys.exit(main())
 
