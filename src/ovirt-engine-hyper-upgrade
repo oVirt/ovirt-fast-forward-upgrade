@@ -357,10 +357,6 @@ def main():
     '''
     logger = logging.getLogger(__name__)
 
-    logger.debug('----------------------')
-    logger.debug('Starting')
-    logger.debug('----------------------')
-
     # Dictionary that keep the release data like:
     # version, repo_to_enable, repo_to_disable
     check_releases = {}
@@ -401,6 +397,10 @@ def main():
     if len(sys.argv) <= 1:
         parser.print_usage()
         sys.exit(1)
+
+    logger.debug('----------------------')
+    logger.debug('Starting')
+    logger.debug('----------------------')
 
     args = parser.parse_args()
     c = Subscriptions()
