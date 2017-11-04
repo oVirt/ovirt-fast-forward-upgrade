@@ -1,23 +1,25 @@
 .TH man 8 "18 Oct, 2017" "ovirt-engine-hyper-upgrade man page"
 .SH NAME
-ovirt-engine-hyper-upgrade \- A tool to help users upgrade RHV environments
+ovirt-engine-hyper-upgrade \- A tool to help users upgrade RHV Manager
 .SH SYNOPSIS
 ovirt-engine-hyper-upgrade.py [-h] [--check-upgrade-rhv-4-0]
                                    [--check-upgrade-rhv-4-1]
 .SH DESCRIPTION
-\fBovirt-engine-hyper-upgrade\fP is a command line tool to manage upgrades for RHV.
+\fBovirt-engine-hyper-upgrade\fP is a command line tool to manage upgrades for RHV Manager.
 .P
 
 .TP
-.B --check-upgrade-rhv-4-0
-Check if there are upgrades for RHV 4.0 zstream and enable 4.1 repositories
+.B --upgrade-to-rhv-4-1
+Check if RHV 4.0 channels have zstream upgrade available.
+Additionally enable 4.1 channels and upgrade RHV Manager
 
 .TP
-.B --check-upgrade-rhv-4-1
-Check if there are upgrades for RHV 4.0 zstream and enable 4.2 repositories
+.B --upgrade-to-rhv-4-2
+Check if RHV 4.1 channels have zstream upgrade available.
+Additionally enable 4.2 channels and upgrade RHV Manager
 
 .SH LOGGING
-See \fB/var/log/engine-hyper-upgrade.log
+See \fB/var/log/ovirt-engine/engine-hyper-upgrade.log
 .SH BUGS
 Report bugs to <http://bugzilla.redhat.com>
 

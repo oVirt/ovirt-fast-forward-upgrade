@@ -208,8 +208,10 @@ class Subscriptions(Base):
             MsgType.INFO
         )
 
+        output_rhsm = self.execute_cmd_check_output(rhsm_cmd)
+
         # We need to parse output of subscription-manager, using check_output
-        for line in self.execute_cmd_check_output(rhsm_cmd).splitlines():
+        for line in output_rhsm.splitlines():
             if('Repo ID:' in line):
                 value = line.split('Repo ID:')[1]
                 self.repos.append(value.strip())
@@ -420,21 +422,21 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='Tool to upgrade RHV environments',
         epilog='Example of use:\n%(prog)s '
-                    '--check-upgrade-rhv-4-0'
+                    '--upgrade-to-rhv-4-0'
     )
 
     parser.add_argument(
-        '--check-upgrade-rhv-4-0',
+        '--upgrade-to-rhv-4-1',
         action='store_true',
-        help='Check if RHV 4.0 channels have upgrade available. '
-             'Also enable 4.1 channels',
+        help='Check if RHV 4.0 channels have zstream upgrade available. '
+             'Additionally enable 4.1 channels and upgrade RHV Manager',
     )
 
     parser.add_argument(
-        '--check-upgrade-rhv-4-1',
+        '--upgrade-to-rhv-4-2',
         action='store_true',
         help='Check if RHV 4.1 channels have zstream upgrade available. '
-             'Also enable 4.2 channels',
+             'Additionally enable 4.2 channels and upgrade RHV Manager',
     )
 
     if len(sys.argv) <= 1:
@@ -450,12 +452,12 @@ def main():
 
     c.get_enabled_repos()
 
-    if args.check_upgrade_rhv_4_0:
+    if args.upgrade_to_rhv_4_1:
         version = "4.0"
-    elif args.check_upgrade_rhv_4_1:
+    elif args.upgrade_to_rhv_4_2:
         version = "4.1"
     else:
-        raise RuntimeError("Unable to detect the RHV version to check!")
+        sys.exit("Please use --help to see options available")
 
     u = UpgradeHelper()
     for release in check_releases['repos']:
