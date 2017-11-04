@@ -20,6 +20,30 @@ import sys
 from enum import Enum
 
 
+RHV_40_REPOS = [
+    "rhel-7-server-supplementary-rpms",
+    "rhel-7-server-rpms",
+    "rhel-7-server-rhv-4.0-rpms",
+    "jb-eap-7-for-rhel-7-server-rpms"
+]
+
+RHV_41_REPOS = [
+    "rhel-7-server-supplementary-rpms",
+    "rhel-7-server-rpms",
+    "rhel-7-server-rhv-4.1-rpms",
+    "rhel-7-server-rhv-4-tools-rpms",
+    "jb-eap-7-for-rhel-7-server-rpms"
+]
+
+RHV_42_REPOS = [
+    "rhel-7-server-supplementary-rpms",
+    "rhel-7-server-rpms",
+    "rhel-7-server-rhv-4.2-rpms",
+    "rhel-7-server-rhv-4-tools-rpms",
+    "jb-eap-7-for-rhel-7-server-rpms"
+]
+
+
 class MsgType(Enum):
     INFO = 1
     WARNING = 2
@@ -149,21 +173,6 @@ class Base(logging.Handler):
 
 
 class Subscriptions(Base):
-    RHV_40_REPOS = [
-        "rhel-7-server-supplementary-rpms",
-        "rhel-7-server-rpms",
-        "rhel-7-server-rhv-4.0-rpms",
-        "jb-eap-7-for-rhel-7-server-rpms"
-    ]
-
-    RHV_41_REPOS = [
-        "rhel-7-server-supplementary-rpms",
-        "rhel-7-server-rpms",
-        "rhel-7-server-rhv-4.1-rpms",
-        "rhel-7-server-rhv-4-tools-rpms",
-        "jb-eap-7-for-rhel-7-server-rpms"
-    ]
-
     SUBSCRIPTION_MANAGER = [
         'env', 'LC_ALL=C', 'subscription-manager'
     ]
@@ -213,9 +222,9 @@ class Subscriptions(Base):
         enabled = set(self.repos)
 
         if version == '4.0':
-            required = set(self.RHV_40_REPOS)
+            required = set(RHV_40_REPOS)
         elif version == '4.1':
-            required = set(self.RHV_41_REPOS)
+            required = set(RHV_41_REPOS)
         else:
             raise RuntimeError('Version parameters not supported!')
 
@@ -241,7 +250,7 @@ class Subscriptions(Base):
 
         return True
 
-    def repository(self, action, repo):
+    def repository(self, action, repos):
         '''
         Enable repository using subscription-manager
         Parameters:
@@ -249,29 +258,56 @@ class Subscriptions(Base):
                 enable  - Enable channel
                 disable - Disable channel
 
-            repo
-                repository name (str)
+            repos
+                repos name (list)
         Returns: command output
         '''
 
-        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
-
         if 'enable' == action:
-            action = ['repos', '--enable', repo]
+            for repo in repos:
+                self.print_msg(
+                    'Enabling repository: {r}'.format(r=repo),
+                    MsgType.INFO
+                )
+
+                if self.execute_cmd([
+                    'env',
+                    'LC_ALL=C',
+                    'subscription-manager',
+                    'repos',
+                    '--enable',
+                    repo
+                ]) != 0:
+                    self.print_msg(
+                        'Cannot enable repository: {r}'.format(r=repo),
+                        MsgType.ERROR
+                    )
+                    sys.exit(2)
+
         elif 'disable' == action:
-            action = ['repos', '--disable', repo]
+            for repo in repos:
+                self.print_msg(
+                    'Disabling repository: {r}'.format(r=repo),
+                    MsgType.INFO
+                )
+
+                if self.execute_cmd([
+                    'env',
+                    'LC_ALL=C',
+                    'subscription-manager',
+                    'repos',
+                    '--disable',
+                    repo
+                ]) != 0:
+                    self.print_msg(
+                        'Cannot disable repository: {r}'.format(r=repo),
+                        MsgType.ERROR
+                    )
+                    sys.exit(2)
         else:
             raise RuntimeError(
                 "Unknown action [%s] for repositories!" % action
             )
-
-        rhsm_cmd.extend(action)
-
-        self.print_msg(
-            'Executing: {cmd}'.format(cmd=rhsm_cmd),
-            MsgType.INFO
-        )
-        return self.execute_cmd(rhsm_cmd)
 
 
 class UpgradeHelper(Base):
@@ -338,7 +374,6 @@ class UpgradeHelper(Base):
             )
             sys.exit(2)
 
-
     def update_system(self):
         '''
         Execute yum update or exit in case of failure
@@ -358,18 +393,18 @@ def main():
     logger = logging.getLogger(__name__)
 
     # Dictionary that keep the release data like:
-    # version, repo_to_enable, repo_to_disable
+    # version, the difference between repo_to_enable and repo_to_disable
     check_releases = {}
     check_releases['repos'] = [
         {
             'version': '4.0',
-            'repo_to_enable': 'rhel-7-server-rhv-4.1-rpms',
-            'repo_to_disable': 'rhel-7-server-rhv-4.0-rpms'
+            'repo_to_enable': set(RHV_41_REPOS) - set(RHV_40_REPOS),
+            'repo_to_disable': set(RHV_40_REPOS) - set(RHV_41_REPOS)
         },
         {
             'version': '4.1',
-            'repo_to_enable': 'rhel-7-server-rhv-4.2-rpms',
-            'repo_to_disable': 'rhel-7-server-rhv-4.1-rpms'
+            'repo_to_enable': set(RHV_42_REPOS) - set(RHV_41_REPOS),
+            'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_REPOS)
         }
     ]
 
@@ -428,16 +463,15 @@ def main():
                 u.upgrade_engine_setup()
                 u.run_engine_setup()
 
-
             u.update_system()
 
-            c.repository(action='enable', repo=release['repo_to_enable'])
+            c.repository(action='enable', repos=release['repo_to_enable'])
             u.upgrade_engine_setup()
             u.run_engine_setup()
 
             u.update_system()
 
-            c.repository(action='disable', repo=release['repo_to_disable'])
+            c.repository(action='disable', repos=release['repo_to_disable'])
 
             logger.info("Please reboot the system to complete the update.")
             logger.info((
