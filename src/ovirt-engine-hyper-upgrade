@@ -14,10 +14,37 @@
 #
 import argparse
 import logging
+import os
 import subprocess
 import sys
 
 from enum import Enum
+
+
+LOGGING_NAME = "/var/log/ovirt-engine/engine-hyper-upgrade.log"
+
+RHV_40_REPOS = [
+    "rhel-7-server-supplementary-rpms",
+    "rhel-7-server-rpms",
+    "rhel-7-server-rhv-4.0-rpms",
+    "jb-eap-7-for-rhel-7-server-rpms"
+]
+
+RHV_41_REPOS = [
+    "rhel-7-server-supplementary-rpms",
+    "rhel-7-server-rpms",
+    "rhel-7-server-rhv-4.1-rpms",
+    "rhel-7-server-rhv-4-tools-rpms",
+    "jb-eap-7-for-rhel-7-server-rpms"
+]
+
+RHV_42_REPOS = [
+    "rhel-7-server-supplementary-rpms",
+    "rhel-7-server-rpms",
+    "rhel-7-server-rhv-4.2-rpms",
+    "rhel-7-server-rhv-4-tools-rpms",
+    "jb-eap-7-for-rhel-7-server-rpms"
+]
 
 
 class MsgType(Enum):
@@ -29,13 +56,12 @@ class MsgType(Enum):
 def _configure_logging():
     """
     The logging settings
-    Saving log in: /var/log/engine-hyper-upgrade.log
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
 
-    fh = logging.FileHandler("/var/log/engine-hyper-upgrade.log")
+    fh = logging.FileHandler(LOGGING_NAME)
     fh.setLevel(logging.DEBUG)
     debug_fmt = logging.Formatter("%(asctime)s %(message)s",
                                   "%m/%d/%Y %I:%M:%S %p")
@@ -89,12 +115,15 @@ class Base(logging.Handler):
                 "{m}".format(m=message)
             ))
 
-    def execute_cmd_check_output(self, command, env_shell=True):
+    def execute_cmd_check_output(self, command, shell=True):
         """
         Execute command returning output
 
         Parameters:
-            command - command to be executed (str)
+            command - command to be executed (str) as shell will be True
+            shell - True or False
+                    If shell is True, the specified command will be
+                    executed through the shell
 
         Returns: output from command or exit
         """
@@ -104,7 +133,7 @@ class Base(logging.Handler):
         )
 
         try:
-            output = subprocess.check_output(command, shell=env_shell)
+            output = subprocess.check_output(command, shell=shell)
         except subprocess.CalledProcessError as e:
             self.print_msg(
                 e.output,
@@ -116,13 +145,15 @@ class Base(logging.Handler):
 
         return output
 
-    def execute_cmd(self, command, env_shell=False):
+    def execute_cmd(self, command, shell=False):
         """
         Execute command
 
         Parameters:
             command - command to be executed, use ['cmd' 'argument']
-            env_shell - Use the shell env, use True or False
+            shell - True or False
+                    If shell is True, the specified command will be
+                    executed through the shell
 
         Returns: return code or exit in case of failure
         """
@@ -135,40 +166,20 @@ class Base(logging.Handler):
 
         p = subprocess.Popen(
             command,
-            shell=env_shell
+            shell=shell
         )
         returncode = p.wait()
 
         if returncode != 0:
             self.logger.debug(
-                'Exiting {cmd}, return code: {ret}'.format(
+                'ATTENTION: {cmd}, return code: {ret}'.format(
                     cmd=cmd_str, ret=returncode)
             )
-            sys.exit(2)
 
         return returncode
 
 
 class Subscriptions(Base):
-    RHV_40_REPOS = [
-        "rhel-7-server-supplementary-rpms",
-        "rhel-7-server-rpms",
-        "rhel-7-server-rhv-4.0-rpms",
-        "jb-eap-7-for-rhel-7-server-rpms"
-    ]
-
-    RHV_41_REPOS = [
-        "rhel-7-server-supplementary-rpms",
-        "rhel-7-server-rpms",
-        "rhel-7-server-rhv-4.1-rpms",
-        "rhel-7-server-rhv-4-tools-rpms",
-        "jb-eap-7-for-rhel-7-server-rpms"
-    ]
-
-    SUBSCRIPTION_MANAGER = [
-        'env', 'LC_ALL=C', 'subscription-manager'
-    ]
-
     def __init__(self):
         super(Subscriptions, self).__init__()
         self.repos = []
@@ -177,14 +188,19 @@ class Subscriptions(Base):
         '''
         Get enabled repos
 
-        Returns: All enabled repos id or empyt list
+        Returns: All enabled repos id or empty list
         '''
         self.repos = []
 
-        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
-        rhsm_cmd.extend(['repos', '--list-enabled'])
+        rhsm_cmd = [
+            'env',
+            'LC_ALL=C',
+            'subscription-manager',
+            'repos',
+            '--list-enabled'
+        ]
 
-        # Convert to str to be used with check_output
+        # Convert to str to be used with check_output and shell=True
         rhsm_cmd = ' '.join(rhsm_cmd)
 
         self.print_msg(
@@ -192,8 +208,10 @@ class Subscriptions(Base):
             MsgType.INFO
         )
 
+        output_rhsm = self.execute_cmd_check_output(rhsm_cmd)
+
         # We need to parse output of subscription-manager, using check_output
-        for line in self.execute_cmd_check_output(rhsm_cmd).splitlines():
+        for line in output_rhsm.splitlines():
             if('Repo ID:' in line):
                 value = line.split('Repo ID:')[1]
                 self.repos.append(value.strip())
@@ -214,9 +232,9 @@ class Subscriptions(Base):
         enabled = set(self.repos)
 
         if version == '4.0':
-            required = set(self.RHV_40_REPOS)
+            required = set(RHV_40_REPOS)
         elif version == '4.1':
-            required = set(self.RHV_41_REPOS)
+            required = set(RHV_41_REPOS)
         else:
             raise RuntimeError('Version parameters not supported!')
 
@@ -242,7 +260,7 @@ class Subscriptions(Base):
 
         return True
 
-    def repository(self, action, repo):
+    def repository(self, action, repos):
         '''
         Enable repository using subscription-manager
         Parameters:
@@ -250,25 +268,56 @@ class Subscriptions(Base):
                 enable  - Enable channel
                 disable - Disable channel
 
-            repo
-                repository name (str)
+            repos
+                repos name (list)
         Returns: command output
         '''
 
-        rhsm_cmd = list(self.SUBSCRIPTION_MANAGER)
-
         if 'enable' == action:
-            action = ['repos', '--enable', repo]
+            for repo in repos:
+                self.print_msg(
+                    'Enabling repository: {r}'.format(r=repo),
+                    MsgType.INFO
+                )
+
+                if self.execute_cmd([
+                    'env',
+                    'LC_ALL=C',
+                    'subscription-manager',
+                    'repos',
+                    '--enable',
+                    repo
+                ]) != 0:
+                    self.print_msg(
+                        'Cannot enable repository: {r}'.format(r=repo),
+                        MsgType.ERROR
+                    )
+                    sys.exit(2)
+
         elif 'disable' == action:
-            action = ['repos', '--disable', repo]
+            for repo in repos:
+                self.print_msg(
+                    'Disabling repository: {r}'.format(r=repo),
+                    MsgType.INFO
+                )
+
+                if self.execute_cmd([
+                    'env',
+                    'LC_ALL=C',
+                    'subscription-manager',
+                    'repos',
+                    '--disable',
+                    repo
+                ]) != 0:
+                    self.print_msg(
+                        'Cannot disable repository: {r}'.format(r=repo),
+                        MsgType.ERROR
+                    )
+                    sys.exit(2)
         else:
             raise RuntimeError(
                 "Unknown action [%s] for repositories!" % action
             )
-
-        rhsm_cmd.extend(action)
-
-        return self.execute_cmd(rhsm_cmd)
 
 
 class UpgradeHelper(Base):
@@ -297,15 +346,17 @@ class UpgradeHelper(Base):
     def is_upgrade_available(self):
         '''
         Execute engine-upgrade-check
-        Returns: command output
+        Returns: command return code, engine-upgrade-check returns 1 in case
+        there is no upgrade. It's not like yum command that returns 1 only
+        in case of error. So we return the returncode to the caller to be able
+        to decide if there is upgrade or not to take the next action.
         '''
         return self.execute_cmd(self.UPGRADE_CHECK)
 
     def upgrade_engine_setup(self):
         '''
         Look for packages with ovirt-engine-setup* name
-        and execute yum update
-        Returns: Empty list or yum update output
+        and execute yum update. In case of failure, exit.
         '''
 
         yum_update_engine_cmd = list(self.YUM_UPDATE_CMD)
@@ -314,21 +365,35 @@ class UpgradeHelper(Base):
             'ovirt-engine-dwh-setup*'
         ])
 
-        return self.execute_cmd(yum_update_engine_cmd)
+        if self.execute_cmd(yum_update_engine_cmd) != 0:
+            self.print_msg(
+                'Aborting.. yum update ovirt-engine-setup* '
+                'ovirt-engine-dwh-setup* failed...',
+                MsgType.ERROR
+            )
+            sys.exit(2)
 
     def run_engine_setup(self):
         '''
-        Execute engine-setup
-        Returns: command output
+        Execute engine-setup or exit in case of failure
         '''
-        return self.execute_cmd(self.ENGINE_SETUP)
+        if self.execute_cmd(self.ENGINE_SETUP) != 0:
+            self.print_msg(
+                'Aborting.. engine-setup failed...',
+                MsgType.ERROR
+            )
+            sys.exit(2)
 
     def update_system(self):
         '''
-        Execute yum update
-        Returns: command output
+        Execute yum update or exit in case of failure
         '''
-        return self.execute_cmd(self.YUM_UPDATE_CMD)
+        if self.execute_cmd(self.YUM_UPDATE_CMD) != 0:
+            self.print_msg(
+                'Aborting.. yum update failed...',
+                MsgType.ERROR
+            )
+            sys.exit(2)
 
 
 def main():
@@ -337,23 +402,19 @@ def main():
     '''
     logger = logging.getLogger(__name__)
 
-    logger.debug('----------------------')
-    logger.debug('Starting')
-    logger.debug('----------------------')
-
     # Dictionary that keep the release data like:
-    # version, repo_to_enable, repo_to_disable
+    # version, the difference between repo_to_enable and repo_to_disable
     check_releases = {}
     check_releases['repos'] = [
         {
             'version': '4.0',
-            'repo_to_enable': 'rhel-7-server-rhv-4.1-rpms',
-            'repo_to_disable': 'rhel-7-server-rhv-4.0-rpms'
+            'repo_to_enable': set(RHV_41_REPOS) - set(RHV_40_REPOS),
+            'repo_to_disable': set(RHV_40_REPOS) - set(RHV_41_REPOS)
         },
         {
             'version': '4.1',
-            'repo_to_enable': 'rhel-7-server-rhv-4.2-rpms',
-            'repo_to_disable': 'rhel-7-server-rhv-4.1-rpms'
+            'repo_to_enable': set(RHV_42_REPOS) - set(RHV_41_REPOS),
+            'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_REPOS)
         }
     ]
 
@@ -361,44 +422,50 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='Tool to upgrade RHV environments',
         epilog='Example of use:\n%(prog)s '
-                    '--check-upgrade-rhv-4-0'
+                    '--upgrade-to-rhv-4-0'
     )
 
     parser.add_argument(
-        '--check-upgrade-rhv-4-0',
+        '--upgrade-to-rhv-4-1',
         action='store_true',
-        help='Check if RHV 4.0 channels have upgrade available. '
-             'Also enable 4.1 channels',
+        help='Check if RHV 4.0 channels have zstream upgrade available. '
+             'Additionally enable 4.1 channels and upgrade RHV Manager',
     )
 
     parser.add_argument(
-        '--check-upgrade-rhv-4-1',
+        '--upgrade-to-rhv-4-2',
         action='store_true',
         help='Check if RHV 4.1 channels have zstream upgrade available. '
-             'Also enable 4.2 channels',
+             'Additionally enable 4.2 channels and upgrade RHV Manager',
     )
 
     if len(sys.argv) <= 1:
         parser.print_usage()
         sys.exit(1)
 
+    logger.debug('----------------------')
+    logger.debug('Starting')
+    logger.debug('----------------------')
+
     args = parser.parse_args()
     c = Subscriptions()
 
     c.get_enabled_repos()
 
-    if args.check_upgrade_rhv_4_0:
+    if args.upgrade_to_rhv_4_1:
         version = "4.0"
-    elif args.check_upgrade_rhv_4_1:
+    elif args.upgrade_to_rhv_4_2:
         version = "4.1"
     else:
-        raise RuntimeError("Unable to detect the RHV version to check!")
+        sys.exit("Please use --help to see options available")
 
     u = UpgradeHelper()
     for release in check_releases['repos']:
         if release['version'] == version:
             c.check_rhv_repos(release['version'])
-            if u.is_upgrade_available():
+
+            # If there is no update, engine-upgrade-check return 1
+            if u.is_upgrade_available() != 1:
                 logger.info("An upgrade is available, upgrading to "
                             "latest {version}.z".format(
                                 version=release['version']))
@@ -406,15 +473,15 @@ def main():
                 u.upgrade_engine_setup()
                 u.run_engine_setup()
 
-                u.update_system()
+            u.update_system()
 
-            c.repository(action='enable', repo=release['repo_to_enable'])
+            c.repository(action='enable', repos=release['repo_to_enable'])
             u.upgrade_engine_setup()
             u.run_engine_setup()
 
             u.update_system()
 
-            c.repository(action='disable', repo=release['repo_to_disable'])
+            c.repository(action='disable', repos=release['repo_to_disable'])
 
             logger.info("Please reboot the system to complete the update.")
             logger.info((
@@ -430,6 +497,11 @@ def main():
 
 
 if __name__ == '__main__':
+
+    if os.geteuid() != 0:
+        sys.exit("User root is required for this program manage "
+                 "the subscriptions in this system!")
+
     _configure_logging()
     sys.exit(main())
 
