@@ -17,7 +17,9 @@ import logging
 import os
 import subprocess
 import sys
+import tempfile
 
+from datetime import datetime
 from enum import Enum
 
 
@@ -395,6 +397,36 @@ class UpgradeHelper(Base):
             )
             sys.exit(2)
 
+    def run_engine_backup(self, dir_to_save_backup):
+        '''
+        Execute engine-backup before upgrade
+
+        Arguments:
+        dir_to_save_backup
+            Directory to engine-backup tool save the bkp file
+        '''
+        engine_backup_file = '{dirbkp}/backup-engine-{date_time}'.format(
+            dirbkp=dir_to_save_backup,
+            date_time=datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        )
+
+        ENGINE_BACKUP_CMD = [
+            'env',
+            'LC_ALL=C',
+            'engine-backup',
+            '--scope=all',
+            '--mode=backup',
+            '--file=' + engine_backup_file + '.bck',
+            '--log=' + engine_backup_file + '.log'
+        ]
+
+        if self.execute_cmd(ENGINE_BACKUP_CMD) != 0:
+            self.print_msg(
+                'Aborting.. engine-backup failed...',
+                MsgType.ERROR
+            )
+            sys.exit(2)
+
 
 def main():
     '''
@@ -423,6 +455,13 @@ def main():
         description='Tool to upgrade RHV environments',
         epilog='Example of use:\n%(prog)s '
                     '--upgrade-to-rhv-4-0'
+    )
+
+    parser.add_argument(
+        '--backup-dir',
+        nargs=1,
+        help='Directory where the engine-backup will save the backup file. '
+             'If not provided, it will use /tmp',
     )
 
     parser.add_argument(
@@ -459,10 +498,17 @@ def main():
     else:
         sys.exit("Please use --help to see options available")
 
+    if args.backup_dir is None:
+        bkp_dir = tempfile.gettempdir()
+    else:
+        bkp_dir = ' '.join(args.backup_dir)
+
     u = UpgradeHelper()
     for release in check_releases['repos']:
         if release['version'] == version:
             c.check_rhv_repos(release['version'])
+
+            u.run_engine_backup(bkp_dir)
 
             # If there is no update, engine-upgrade-check return 1
             if u.is_upgrade_available() != 1:
