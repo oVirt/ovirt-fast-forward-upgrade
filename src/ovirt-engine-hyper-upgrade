@@ -15,6 +15,7 @@
 import argparse
 import logging
 import os
+import rpm
 import subprocess
 import sys
 import tempfile
@@ -397,6 +398,19 @@ class UpgradeHelper(Base):
             )
             sys.exit(2)
 
+    def detect_major_version_engine(self):
+        '''
+        Detect major version of oVirt Engine
+        '''
+        ts = rpm.TransactionSet()
+        mi = ts.dbMatch()
+        for package in mi:
+            if package['name'] == 'ovirt-engine':
+                # Get the major version
+                major = package['version'][:3]
+                self.logger.debug('Major version ovirt-engine: %s' % major)
+                return major
+
     def run_engine_backup(self, dir_to_save_backup):
         '''
         Execute engine-backup before upgrade
@@ -464,39 +478,10 @@ def main():
              'If not provided, it will use /tmp',
     )
 
-    parser.add_argument(
-        '--upgrade-to-rhv-4-1',
-        action='store_true',
-        help='Check if RHV 4.0 channels have zstream upgrade available. '
-             'Additionally enable 4.1 channels and upgrade RHV Manager',
-    )
-
-    parser.add_argument(
-        '--upgrade-to-rhv-4-2',
-        action='store_true',
-        help='Check if RHV 4.1 channels have zstream upgrade available. '
-             'Additionally enable 4.2 channels and upgrade RHV Manager',
-    )
-
-    if len(sys.argv) <= 1:
-        parser.print_usage()
-        sys.exit(1)
-
-    logger.debug('----------------------')
-    logger.debug('Starting')
-    logger.debug('----------------------')
-
     args = parser.parse_args()
     c = Subscriptions()
 
     c.get_enabled_repos()
-
-    if args.upgrade_to_rhv_4_1:
-        version = "4.0"
-    elif args.upgrade_to_rhv_4_2:
-        version = "4.1"
-    else:
-        sys.exit("Please use --help to see options available")
 
     if args.backup_dir is None:
         bkp_dir = tempfile.gettempdir()
@@ -505,6 +490,11 @@ def main():
 
     u = UpgradeHelper()
     for release in check_releases['repos']:
+        logger.debug('----------------------')
+        logger.debug('Starting')
+        logger.debug('----------------------')
+
+        version = u.detect_major_version_engine()
         if release['version'] == version:
             c.check_rhv_repos(release['version'])
 
