@@ -24,7 +24,7 @@ from datetime import datetime
 from enum import Enum
 
 
-LOGGING_NAME = "/var/log/ovirt-engine/engine-hyper-upgrade.log"
+LOGGING_FILE = "/var/log/ovirt-engine/engine-hyper-upgrade.log"
 
 RHV_40_REPOS = [
     "rhel-7-server-supplementary-rpms",
@@ -64,7 +64,7 @@ def _configure_logging():
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
 
-    fh = logging.FileHandler(LOGGING_NAME)
+    fh = logging.FileHandler(LOGGING_FILE)
     fh.setLevel(logging.DEBUG)
     debug_fmt = logging.Formatter("%(asctime)s %(message)s",
                                   "%m/%d/%Y %I:%M:%S %p")
@@ -123,7 +123,7 @@ class Base(logging.Handler):
         Execute command returning output
 
         Parameters:
-            command - command to be executed (str) as shell will be True
+            command - command to be executed
             shell - True or False
                     If shell is True, the specified command will be
                     executed through the shell
