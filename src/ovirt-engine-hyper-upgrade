@@ -495,6 +495,12 @@ def main():
              'If not provided, it will use /tmp',
     )
 
+    parser.add_argument(
+        '--upgrade-to-rhv',
+        nargs=1,
+        help='Upgrade to specifc version of RHV',
+    )
+
     args = parser.parse_args()
     c = Subscriptions()
 
@@ -505,14 +511,21 @@ def main():
     else:
         bkp_dir = ' '.join(args.backup_dir)
 
+    upgrade_supported = False
+
     u = UpgradeHelper()
     for release in check_releases['repos']:
         logger.debug('----------------------')
         logger.debug('Starting')
         logger.debug('----------------------')
 
-        version = u.detect_major_version_engine()
+        if args.upgrade_to_rhv is None:
+            version = u.detect_major_version_engine()
+        else:
+            version = ' '.join(args.upgrade_to_rhv)
+
         if release['version'] == version:
+            upgrade_supported = True
             c.check_rhv_repos(release['version'])
 
             u.run_engine_backup(bkp_dir)
@@ -545,6 +558,13 @@ def main():
                 "ization/{version}/single/upgrade-guide#chap-"
                 "Post-Upgrade_Tasks".format(version=release['version'])
             ))
+
+    if upgrade_supported is False:
+        logger.error(
+            'Unable to upgrade this environment to {v} version!'.format(
+                v=version)
+        )
+        sys.exit(2)
 
     return 0
 
