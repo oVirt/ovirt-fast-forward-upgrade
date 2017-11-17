@@ -402,14 +402,31 @@ class UpgradeHelper(Base):
         '''
         Detect major version of oVirt Engine
         '''
+        engine_package = 'ovirt-engine'
+        major_version_engine = None
+
         ts = rpm.TransactionSet()
         mi = ts.dbMatch()
+
         for package in mi:
-            if package['name'] == 'ovirt-engine':
+            if package['name'] == engine_package:
                 # Get the major version
-                major = package['version'][:3]
-                self.logger.debug('Major version ovirt-engine: %s' % major)
-                return major
+                major_version_engine = package['version'][:3]
+
+                self.logger.debug(
+                    'Major version {pkg}: majorv'.format(
+                        pkg=engine_package, majorv=major_version_engine)
+                )
+
+        if major_version_engine is None:
+            self.print_msg(
+                'Aborting.. unable to find {pkg} package to detect major '
+                'version...'.format(pkg=engine_package),
+                MsgType.ERROR
+            )
+            sys.exit(2)
+
+        return major_version_engine
 
     def run_engine_backup(self, dir_to_save_backup):
         '''
