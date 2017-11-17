@@ -501,6 +501,10 @@ def main():
         help='Upgrade to specifc version of RHV',
     )
 
+    logger.debug('----------------------')
+    logger.debug('Starting')
+    logger.debug('----------------------')
+
     args = parser.parse_args()
     c = Subscriptions()
 
@@ -515,10 +519,6 @@ def main():
 
     u = UpgradeHelper()
     for release in check_releases['repos']:
-        logger.debug('----------------------')
-        logger.debug('Starting')
-        logger.debug('----------------------')
-
         if args.upgrade_to_rhv is None:
             version = u.detect_major_version_engine()
         else:
