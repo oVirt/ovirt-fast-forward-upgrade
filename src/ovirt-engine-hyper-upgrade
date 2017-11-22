@@ -485,7 +485,7 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='Tool to upgrade RHV environments',
         epilog='Example of use:\n%(prog)s '
-                    '--upgrade-to-rhv-4-0'
+                    '--upgrade-to-rhv=4.1'
     )
 
     parser.add_argument(
