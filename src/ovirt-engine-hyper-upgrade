@@ -66,7 +66,6 @@ CHECK_RELEASES['repos'] = [
 ]
 
 
-
 class MsgType(Enum):
     INFO = 1
     WARNING = 2
@@ -490,6 +489,12 @@ def main():
     )
 
     parser.add_argument(
+        '--backup',
+        action='store_true',
+        help='Execute engine-backup before upgrade',
+    )
+
+    parser.add_argument(
         '--backup-dir',
         nargs=1,
         help='Directory where the engine-backup will save the backup file. '
@@ -507,14 +512,19 @@ def main():
     logger.debug('----------------------')
 
     args = parser.parse_args()
-    c = Subscriptions()
 
+    if args.backup_dir and not args.backup:
+        logger.error('The option --backup-dir requires --backup!')
+        sys.exit(2)
+
+    c = Subscriptions()
     c.get_enabled_repos()
 
-    if args.backup_dir is None:
-        bkp_dir = tempfile.gettempdir()
-    else:
-        bkp_dir = ' '.join(args.backup_dir)
+    if args.backup:
+        if args.backup_dir is None:
+            bkp_dir = tempfile.gettempdir()
+        else:
+            bkp_dir = ' '.join(args.backup_dir)
 
     upgrade_supported = False
 
@@ -529,7 +539,8 @@ def main():
             upgrade_supported = True
             c.check_rhv_repos(release['version'])
 
-            u.run_engine_backup(bkp_dir)
+            if args.backup:
+                u.run_engine_backup(bkp_dir)
 
             # If there is no update, engine-upgrade-check return 1
             if u.is_upgrade_available() != 1:
