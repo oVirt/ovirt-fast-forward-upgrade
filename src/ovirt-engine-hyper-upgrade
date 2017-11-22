@@ -49,6 +49,23 @@ RHV_42_REPOS = [
     "jb-eap-7-for-rhel-7-server-rpms"
 ]
 
+# Dictionary that keep the release data like:
+# version, the difference between repo_to_enable and repo_to_disable
+CHECK_RELEASES = {}
+CHECK_RELEASES['repos'] = [
+    {
+        'version': '4.0',
+        'repo_to_enable': set(RHV_41_REPOS) - set(RHV_40_REPOS),
+        'repo_to_disable': set(RHV_40_REPOS) - set(RHV_41_REPOS)
+    },
+    {
+        'version': '4.1',
+        'repo_to_enable': set(RHV_42_REPOS) - set(RHV_41_REPOS),
+        'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_REPOS)
+    }
+]
+
+
 
 class MsgType(Enum):
     INFO = 1
@@ -465,22 +482,6 @@ def main():
     '''
     logger = logging.getLogger(__name__)
 
-    # Dictionary that keep the release data like:
-    # version, the difference between repo_to_enable and repo_to_disable
-    check_releases = {}
-    check_releases['repos'] = [
-        {
-            'version': '4.0',
-            'repo_to_enable': set(RHV_41_REPOS) - set(RHV_40_REPOS),
-            'repo_to_disable': set(RHV_40_REPOS) - set(RHV_41_REPOS)
-        },
-        {
-            'version': '4.1',
-            'repo_to_enable': set(RHV_42_REPOS) - set(RHV_41_REPOS),
-            'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_REPOS)
-        }
-    ]
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description='Tool to upgrade RHV environments',
@@ -518,7 +519,7 @@ def main():
     upgrade_supported = False
 
     u = UpgradeHelper()
-    for release in check_releases['repos']:
+    for release in CHECK_RELEASES['repos']:
         if args.upgrade_to_rhv is None:
             version = u.detect_major_version_engine()
         else:
