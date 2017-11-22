@@ -2,12 +2,16 @@
 .SH NAME
 ovirt-engine-hyper-upgrade \- A tool to help users upgrade RHV Manager
 .SH SYNOPSIS
-ovirt-engine-hyper-upgrade.py [-h] [--backup-dir BACKUP_DIR]
+ovirt-engine-hyper-upgrade.py [-h] [--backup] [--backup-dir BACKUP_DIR]
                                   [--upgrade-to-rhv UPGRADE_TO_RHV]
 
 .SH DESCRIPTION
 \fBovirt-engine-hyper-upgrade\fP is a command line tool to manage upgrades for RHV Manager.
 .P
+
+.TP
+.B --backup
+Execute engine-backup before the upgrade
 
 .TP
 .B --backup-dir
@@ -20,6 +24,23 @@ Upgrade to specifc version of RHV
 
 .SH LOGGING
 See \fB/var/log/ovirt-engine/engine-hyper-upgrade.log
+
+.SH EXAMPLES
+Upgrade through latest version, backup won't be created
+.br
+# ovirt-engine-hyper-upgrade
+.br
+
+Upgrade to version 4.1 creating a backup from engine, backup will be saved in /backup
+.br
+# ovirt-engine-hyper-upgrade --backup --backup-dir=/backup --upgrade-to-rhv=4.1
+.br
+
+Upgrade to version 4.1, backup won't created
+.br
+# ovirt-engine-hyper-upgrade --upgrade-to-rhv=4.1
+.br
+
 .SH BUGS
 Report bugs to <http://bugzilla.redhat.com>
 

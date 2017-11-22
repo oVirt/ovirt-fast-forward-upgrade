@@ -49,6 +49,22 @@ RHV_42_REPOS = [
     "jb-eap-7-for-rhel-7-server-rpms"
 ]
 
+# Dictionary that keep the release data like:
+# version, the difference between repo_to_enable and repo_to_disable
+CHECK_RELEASES = {}
+CHECK_RELEASES['repos'] = [
+    {
+        'version': '4.0',
+        'repo_to_enable': set(RHV_41_REPOS) - set(RHV_40_REPOS),
+        'repo_to_disable': set(RHV_40_REPOS) - set(RHV_41_REPOS)
+    },
+    {
+        'version': '4.1',
+        'repo_to_enable': set(RHV_42_REPOS) - set(RHV_41_REPOS),
+        'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_REPOS)
+    }
+]
+
 
 class MsgType(Enum):
     INFO = 1
@@ -465,27 +481,17 @@ def main():
     '''
     logger = logging.getLogger(__name__)
 
-    # Dictionary that keep the release data like:
-    # version, the difference between repo_to_enable and repo_to_disable
-    check_releases = {}
-    check_releases['repos'] = [
-        {
-            'version': '4.0',
-            'repo_to_enable': set(RHV_41_REPOS) - set(RHV_40_REPOS),
-            'repo_to_disable': set(RHV_40_REPOS) - set(RHV_41_REPOS)
-        },
-        {
-            'version': '4.1',
-            'repo_to_enable': set(RHV_42_REPOS) - set(RHV_41_REPOS),
-            'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_REPOS)
-        }
-    ]
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description='Tool to upgrade RHV environments',
         epilog='Example of use:\n%(prog)s '
-                    '--upgrade-to-rhv-4-0'
+                    '--upgrade-to-rhv=4.1'
+    )
+
+    parser.add_argument(
+        '--backup',
+        action='store_true',
+        help='Execute engine-backup before upgrade',
     )
 
     parser.add_argument(
@@ -506,19 +512,24 @@ def main():
     logger.debug('----------------------')
 
     args = parser.parse_args()
-    c = Subscriptions()
 
+    if args.backup_dir and not args.backup:
+        logger.error('The option --backup-dir requires --backup!')
+        sys.exit(2)
+
+    c = Subscriptions()
     c.get_enabled_repos()
 
-    if args.backup_dir is None:
-        bkp_dir = tempfile.gettempdir()
-    else:
-        bkp_dir = ' '.join(args.backup_dir)
+    if args.backup:
+        if args.backup_dir is None:
+            bkp_dir = tempfile.gettempdir()
+        else:
+            bkp_dir = ' '.join(args.backup_dir)
 
     upgrade_supported = False
 
     u = UpgradeHelper()
-    for release in check_releases['repos']:
+    for release in CHECK_RELEASES['repos']:
         if args.upgrade_to_rhv is None:
             version = u.detect_major_version_engine()
         else:
@@ -528,7 +539,8 @@ def main():
             upgrade_supported = True
             c.check_rhv_repos(release['version'])
 
-            u.run_engine_backup(bkp_dir)
+            if args.backup:
+                u.run_engine_backup(bkp_dir)
 
             # If there is no update, engine-upgrade-check return 1
             if u.is_upgrade_available() != 1:

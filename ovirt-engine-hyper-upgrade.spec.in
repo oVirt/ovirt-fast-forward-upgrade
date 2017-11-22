@@ -39,6 +39,8 @@ BuildArch:     noarch
 Requires: subscription-manager
 Requires: ovirt-engine-setup-base
 Requires: ovirt-engine-setup-plugin-ovirt-engine
+Requires: yum
+Requires: rpm-python
 
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
