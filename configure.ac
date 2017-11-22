@@ -17,7 +17,7 @@ define([VERSION_SUFFIX], [_master])
 AC_INIT([ovirt-engine-hyper-upgrade], VERSION_NUMBER[]VERSION_SUFFIX, [devel@ovirt.org])
 PACKAGE_NAME="ovirt-engine-hyper-upgrade"
 PACKAGE_RPM_VERSION="VERSION_NUMBER"
-PACKAGE_RPM_RELEASE="0"
+PACKAGE_RPM_RELEASE="1"
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability tar-pax])
 
 AC_SUBST([PACKAGE_RPM_VERSION])
