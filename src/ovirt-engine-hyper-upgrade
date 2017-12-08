@@ -380,14 +380,12 @@ class UpgradeHelper(Base):
 
         yum_update_engine_cmd = list(self.YUM_UPDATE_CMD)
         yum_update_engine_cmd.extend([
-            'ovirt-engine-setup*',
-            'ovirt-engine-dwh-setup*'
+            'ovirt-engine-*setup*',
         ])
 
         if self.execute_cmd(yum_update_engine_cmd) != 0:
             self.print_msg(
-                'Aborting.. yum update ovirt-engine-setup* '
-                'ovirt-engine-dwh-setup* failed...',
+                'Aborting.. yum update ovirt-engine-*setup* failed...',
                 MsgType.ERROR
             )
             sys.exit(2)
