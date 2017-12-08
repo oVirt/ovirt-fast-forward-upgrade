@@ -89,6 +89,9 @@ ln -sf %{_mandir}/man8/ovirt-engine-hyper-upgrade.* %{_mandir}/man8/engine-hyper
 %{_mandir}/man8/*
 
 %changelog
+* Fri Dec 08 2017 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-2
+- Release 1.0.0-2
+
 * Wed Nov 22 2017 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-1
 - Release 1.0.0-1
 
