@@ -292,47 +292,44 @@ class Subscriptions(Base):
         Returns: command output
         '''
 
+        SUBSCRIPTION_MANAGER_CMD = [
+            'env',
+            'LC_ALL=C',
+            'subscription-manager',
+            'repos'
+        ]
+
         if 'enable' == action:
+            rhsm_enable_cmd = list(SUBSCRIPTION_MANAGER_CMD)
             for repo in repos:
                 self.print_msg(
                     'Enabling repository: {r}'.format(r=repo),
                     MsgType.INFO
                 )
+                rhsm_enable_cmd.extend(['--enable', repo])
 
-                if self.execute_cmd([
-                    'env',
-                    'LC_ALL=C',
-                    'subscription-manager',
-                    'repos',
-                    '--enable',
-                    repo
-                ]) != 0:
-                    self.print_msg(
-                        'Cannot enable repository: {r}'.format(r=repo),
-                        MsgType.ERROR
-                    )
-                    sys.exit(2)
+            if self.execute_cmd(rhsm_enable_cmd) != 0:
+                self.print_msg(
+                    'Cannot enable repository: {r}'.format(r=repo),
+                    MsgType.ERROR
+                )
+                sys.exit(2)
 
         elif 'disable' == action:
+            rhsm_disable_cmd = list(SUBSCRIPTION_MANAGER_CMD)
             for repo in repos:
                 self.print_msg(
                     'Disabling repository: {r}'.format(r=repo),
                     MsgType.INFO
                 )
+                rhsm_disable_cmd.extend(['--disable', repo])
 
-                if self.execute_cmd([
-                    'env',
-                    'LC_ALL=C',
-                    'subscription-manager',
-                    'repos',
-                    '--disable',
-                    repo
-                ]) != 0:
-                    self.print_msg(
-                        'Cannot disable repository: {r}'.format(r=repo),
-                        MsgType.ERROR
-                    )
-                    sys.exit(2)
+            if self.execute_cmd(rhsm_disable_cmd) != 0:
+                self.print_msg(
+                    'Cannot disable repository: {r}'.format(r=repo),
+                    MsgType.ERROR
+                )
+                sys.exit(2)
         else:
             raise RuntimeError(
                 "Unknown action [%s] for repositories!" % action
@@ -428,7 +425,7 @@ class UpgradeHelper(Base):
                 major_version_engine = package['version'][:3]
 
                 self.logger.debug(
-                    'Major version {pkg}: majorv'.format(
+                    'Major version {pkg}: {majorv}'.format(
                         pkg=engine_package, majorv=major_version_engine)
                 )
 
