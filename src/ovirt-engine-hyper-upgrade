@@ -428,7 +428,7 @@ class UpgradeHelper(Base):
                 major_version_engine = package['version'][:3]
 
                 self.logger.debug(
-                    'Major version {pkg}: majorv'.format(
+                    'Major version {pkg}: {majorv}'.format(
                         pkg=engine_package, majorv=major_version_engine)
                 )
 
