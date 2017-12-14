@@ -496,12 +496,6 @@ def main():
              'If not provided, it will use /tmp',
     )
 
-    parser.add_argument(
-        '--upgrade-to-rhv',
-        nargs=1,
-        help='Upgrade to specifc version of RHV',
-    )
-
     logger.debug('----------------------')
     logger.debug('Starting')
     logger.debug('----------------------')
@@ -525,10 +519,7 @@ def main():
 
     u = UpgradeHelper()
     for release in CHECK_RELEASES['repos']:
-        if args.upgrade_to_rhv is None:
-            version = u.detect_major_version_engine()
-        else:
-            version = ' '.join(args.upgrade_to_rhv)
+        version = u.detect_major_version_engine()
 
         if release['version'] == version:
             upgrade_supported = True
