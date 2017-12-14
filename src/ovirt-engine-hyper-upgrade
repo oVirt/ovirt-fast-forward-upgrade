@@ -492,7 +492,7 @@ def main():
     parser.add_argument(
         '--backup-dir',
         nargs=1,
-        help='Directory where the engine-backup will save the backup file. '
+        help='Directory where the engine-backup will save the output\n'
              'If not provided, it will use /tmp',
     )
 
