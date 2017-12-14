@@ -547,22 +547,18 @@ def main():
 
             c.repository(action='disable', repos=release['repo_to_disable'])
 
-            logger.info("Please reboot the system to complete the update.")
-            logger.info((
-                "Once rebooted, please change the cluster and datacenter "
-                "compatibility level to {version}.\n"
-                "See Chapter 4, Post-Upgrade Tasks: "
-                "https://access.redhat.com/documentation/en/red-hat-virtual"
-                "ization/{version}/single/upgrade-guide#chap-"
-                "Post-Upgrade_Tasks".format(version=release['version'])
-            ))
-
     if upgrade_supported is False:
         logger.error(
             'Unable to upgrade this environment to {v} version!'.format(
                 v=version)
         )
         sys.exit(2)
+
+    logger.info("Please reboot the system to complete the update.")
+    logger.info(
+        "Once rebooted, please change the cluster and datacenter "
+        "compatibility level to the latest version.\n"
+    )
 
     return 0
 
