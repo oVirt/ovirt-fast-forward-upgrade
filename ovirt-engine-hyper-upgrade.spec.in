@@ -89,6 +89,15 @@ ln -sf %{_mandir}/man8/ovirt-engine-hyper-upgrade.* %{_mandir}/man8/engine-hyper
 %{_mandir}/man8/*
 
 %changelog
+* Fri Dec 08 2017 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-3
+- Release 1.0.0-3
+- hyper-upgrade: Enable beta channels for 4.2
+- hyper-upgrade: Single message after upgrade is done
+- hyper-upgrade: remove --upgrade-to-rhv option
+- --help: keep 80 chars length
+- ovirt-engine-hyper-upgrade: Enable/Disable with single cmd
+- ovirt-engine-hyper-upgrade: fix log typo
+
 * Fri Dec 08 2017 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-2
 - Release 1.0.0-2
 
