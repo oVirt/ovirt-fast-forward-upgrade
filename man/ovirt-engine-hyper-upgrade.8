@@ -3,7 +3,6 @@
 ovirt-engine-hyper-upgrade \- A tool to help users upgrade RHV Manager (RHVM)
 .SH SYNOPSIS
 ovirt-engine-hyper-upgrade.py [-h] [--backup] [--backup-dir BACKUP_DIR]
-                                  [--upgrade-to-rhv UPGRADE_TO_RHV]
 
 .SH DESCRIPTION
 The \fBovit-engine-hyper-upgrade\fP is a wrapper tool to automate RHV Manager upgrades.
@@ -36,10 +35,6 @@ Execute engine-backup before the upgrade
 Directory where the engine-backup will save the backup file.
 If not provided, it will use /tmp
 
-.TP
-.B --upgrade-to-rhv
-Upgrade to specifc version of RHV
-
 .SH LOGGING
 See \fB/var/log/ovirt-engine/engine-hyper-upgrade.log
 
@@ -51,12 +46,12 @@ Upgrade through latest version, backup won't be created
 
 Upgrade to version 4.1 creating a backup from engine, backup will be saved in /backup
 .br
-# ovirt-engine-hyper-upgrade --backup --backup-dir=/backup --upgrade-to-rhv=4.1
+# ovirt-engine-hyper-upgrade --backup --backup-dir=/backup
 .br
 
-Upgrade to version 4.1, backup won't created
+Upgrade only, backup won't created
 .br
-# ovirt-engine-hyper-upgrade --upgrade-to-rhv=4.1
+# ovirt-engine-hyper-upgrade
 .br
 
 .SH BUGS
