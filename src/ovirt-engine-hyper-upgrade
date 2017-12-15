@@ -41,6 +41,14 @@ RHV_41_REPOS = [
     "jb-eap-7-for-rhel-7-server-rpms"
 ]
 
+RHV_42_BETA_REPOS = [
+    "rhel-7-server-supplementary-rpms",
+    "rhel-7-server-rpms",
+    "rhel-7-server-rhv-4-beta-rpms",
+    "rhel-7-server-rhv-4-tools-beta-rpms",
+    "jb-eap-7-for-rhel-7-server-rpms"
+]
+
 RHV_42_REPOS = [
     "rhel-7-server-supplementary-rpms",
     "rhel-7-server-rpms",
@@ -60,8 +68,8 @@ CHECK_RELEASES['repos'] = [
     },
     {
         'version': '4.1',
-        'repo_to_enable': set(RHV_42_REPOS) - set(RHV_41_REPOS),
-        'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_REPOS)
+        'repo_to_enable': set(RHV_42_BETA_REPOS) - set(RHV_41_REPOS),
+        'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_BETA_REPOS)
     }
 ]
 
