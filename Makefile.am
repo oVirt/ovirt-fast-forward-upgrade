@@ -23,8 +23,8 @@ SUBDIRS = \
 	$(NULL)	
 
 EXTRA_DIST = \
-	ovirt-engine-hyper-upgrade.spec \
-	ovirt-engine-hyper-upgrade.spec.in \
+	ovirt-fast-forward-upgrade.spec \
+	ovirt-fast-forward-upgrade.spec.in \
 	LICENSE \
 	$(NULL)
 
@@ -81,4 +81,4 @@ flake8:
 	done
 
 distclean-local:
-	@rm -rf $(DISTCLEANDIRS) $(DISTCLEANFILES)
+	@rm -rf $(DISTCLEANDIRS) $(DISTCLEANFILES) *.spec
