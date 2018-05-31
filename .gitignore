@@ -12,7 +12,7 @@ Makefile.in
 tmp.repos
 
 # spec 
-ovirt-engine-hyper-upgrade.spec
+ovirt-fast-forward-upgrade.spec
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

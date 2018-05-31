@@ -9,5 +9,5 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 dist_sbin_SCRIPTS = \
-	ovirt-engine-hyper-upgrade
+	ovirt-fast-forward-upgrade
 	$(NULL)

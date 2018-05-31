@@ -14,8 +14,8 @@ define([VERSION_FIX], [0])
 define([VERSION_NUMBER], VERSION_MAJOR[.]VERSION_MINOR[.]VERSION_FIX)
 define([VERSION_SUFFIX], [_master])
 
-AC_INIT([ovirt-engine-hyper-upgrade], VERSION_NUMBER[]VERSION_SUFFIX, [devel@ovirt.org])
-PACKAGE_NAME="ovirt-engine-hyper-upgrade"
+AC_INIT([ovirt-fast-forward-upgrade], VERSION_NUMBER[]VERSION_SUFFIX, [devel@ovirt.org])
+PACKAGE_NAME="ovirt-fast-forward-upgrade"
 PACKAGE_RPM_VERSION="VERSION_NUMBER"
 PACKAGE_RPM_RELEASE="4"
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability tar-pax])
@@ -46,5 +46,5 @@ AC_CONFIG_FILES([
 		Makefile
 		src/Makefile
 		man/Makefile
-		ovirt-engine-hyper-upgrade.spec])
+		ovirt-fast-forward-upgrade.spec])
 AC_OUTPUT
