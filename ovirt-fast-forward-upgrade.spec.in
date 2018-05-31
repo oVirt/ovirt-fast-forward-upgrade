@@ -89,20 +89,5 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 %{_mandir}/man8/*
 
 %changelog
-* Fri Dec 08 2017 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-3
-- Release 1.0.0-3
-- hyper-upgrade: Enable beta channels for 4.2
-- hyper-upgrade: Single message after upgrade is done
-- hyper-upgrade: remove --upgrade-to-rhv option
-- --help: keep 80 chars length
-- ovirt-fast-forward-upgrade: Enable/Disable with single cmd
-- ovirt-fast-forward-upgrade: fix log typo
-
-* Fri Dec 08 2017 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-2
-- Release 1.0.0-2
-
-* Wed Nov 22 2017 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-1
-- Release 1.0.0-1
-
-* Thu Oct 19 2017 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-0
-- Initial take
+* Thu May 31 2018 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-1
+- First release of ovirt-fast-forward-upgrade Release 1.0.0-1
