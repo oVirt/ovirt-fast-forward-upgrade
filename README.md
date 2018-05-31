@@ -1,8 +1,8 @@
-# ovirt-engine-hyper-upgrade
+# ovirt-fast-forward-upgrade
 
 About
 =====
-The ovirt-engine-hyper-upgrade is a wrapper tool to automate RHV Manager upgrades.
+The ovirt-fast-forward-upgrade is a wrapper tool to automate oVirt Engine upgrades.
 
 **Supported versions**:  
 4.0 or higher
