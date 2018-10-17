@@ -24,7 +24,7 @@ from datetime import datetime
 from enum import Enum
 
 
-LOGGING_FILE = "/var/log/ovirt-engine/engine-hyper-upgrade.log"
+LOGGING_FILE = "/var/log/ovirt-engine/ovirt-fast-forward-upgrade.log"
 
 RHV_40_REPOS = [
     "rhel-7-server-supplementary-rpms",
