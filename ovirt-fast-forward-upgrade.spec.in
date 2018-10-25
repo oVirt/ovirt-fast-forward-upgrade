@@ -89,6 +89,9 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 %{_mandir}/man8/*
 
 %changelog
+* Thu Oct 25 2018 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-4
+- 1.0.0-4 build
+
 * Fri Dec 08 2017 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-3
 - Release 1.0.0-3
 - hyper-upgrade: Enable beta channels for 4.2
