@@ -260,15 +260,27 @@ class Subscriptions(Base):
             version: RHV version to check, example of values (str):
                 4.0
                 4.1
+                4.2
 
         Returns: True or False
         '''
+        self.get_enabled_repos()
         enabled = set(self.repos)
 
         if version == '4.0':
             required = set(RHV_40_REPOS)
         elif version == '4.1':
             required = set(RHV_41_REPOS)
+        elif version == '4.2':
+            continue_upgrade = raw_input(
+                'Upgrading to RHV 4.3... cluster compatibility version '
+                '3.6 and 4.0 are not supported. Are you sure you want to '
+                'continue? [N/y]'
+            ).lower().strip()
+            if not continue_upgrade or continue_upgrade[0] != "y":
+                logger.info('Aborting...')
+                sys.exit(0)
+            required = set(RHV_42_REPOS)
         else:
             raise RuntimeError('Version parameters not supported!')
 
@@ -521,7 +533,6 @@ def main():
         sys.exit(2)
 
     c = Subscriptions()
-    c.get_enabled_repos()
 
     if args.backup:
         if args.backup_dir is None:
