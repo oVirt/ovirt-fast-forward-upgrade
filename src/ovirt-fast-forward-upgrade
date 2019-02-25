@@ -30,7 +30,7 @@ RHV_40_REPOS = [
     "rhel-7-server-supplementary-rpms",
     "rhel-7-server-rpms",
     "rhel-7-server-rhv-4.0-rpms",
-    "jb-eap-7-for-rhel-7-server-rpms"
+    "jb-eap-7.0-for-rhel-7-server-rpms"
 ]
 
 RHV_41_REPOS = [
@@ -38,7 +38,7 @@ RHV_41_REPOS = [
     "rhel-7-server-rpms",
     "rhel-7-server-rhv-4.1-rpms",
     "rhel-7-server-rhv-4-tools-rpms",
-    "jb-eap-7-for-rhel-7-server-rpms"
+    "jb-eap-7.1-for-rhel-7-server-rpms"
 ]
 
 RHV_42_REPOS = [
@@ -56,7 +56,7 @@ RHV_43_REPOS = [
     "rhel-7-server-rhv-4-beta-rpms",
     "rhel-7-server-rhv-4-tools-beta-rpms",
     "rhel-7-server-ansible-2-rpms",
-    "jb-eap-7-for-rhel-7-server-rpms"
+    "jb-eap-7.2-for-rhel-7-server-rpms"
 ]
 
 # Dictionary that keep the release data like:
