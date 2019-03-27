@@ -13,6 +13,7 @@
 #  limitations under the License.
 #
 import argparse
+import json
 import logging
 import os
 import rpm
@@ -149,6 +150,21 @@ class Base(logging.Handler):
                 "{m}".format(m=message)
             ))
 
+    def execute_cmd_remote_host_check_output(self, host, command):
+        """
+        Execute Command in a remote host and check output
+        """
+
+        key = "/etc/pki/ovirt-engine/keys/engine_id_rsa"
+        if not os.path.exists(key):
+            raise RuntimeError("Can't find engine private key!")
+
+        cmd = (
+            "ssh -i {key} {host} {command}".format(
+                key=key, host=host, command=command)
+        )
+        return self.execute_cmd_check_output(cmd)
+
     def execute_cmd_check_output(self, command, shell=True):
         """
         Execute command returning output
@@ -161,10 +177,12 @@ class Base(logging.Handler):
 
         Returns: output from command or exit
         """
-        self.print_msg(
-            'Executing: {cmd}'.format(cmd=command),
-            MsgType.INFO
-        )
+        # We don't need to print the SQL queries
+        if not "engine-db-query" in command:
+            self.print_msg(
+                'Executing: {cmd}'.format(cmd=command),
+                MsgType.INFO
+            )
 
         try:
             output = subprocess.check_output(command, shell=shell)
@@ -383,8 +401,26 @@ class UpgradeHelper(Base):
         'engine-setup'
     ]
 
+    HE_SET_MAINTENANCE_NONE = (
+        "env "
+        "LC_ALL=C "
+        "hosted-engine "
+        "--set-maintenance "
+        "--mode=none"
+    )
+
+    HE_SET_MAINTENANCE_GLOBAL = (
+        "env "
+        "LC_ALL=C "
+        "hosted-engine "
+        "--set-maintenance "
+        "--mode=global"
+    )
+
     def __init__(self):
         super(UpgradeHelper, self).__init__()
+        self.hosted_engine = None
+        self.hosted_engine_host = None
 
     def is_upgrade_available(self):
         '''
@@ -414,16 +450,78 @@ class UpgradeHelper(Base):
             )
             sys.exit(2)
 
+    def check_he_running(self):
+        '''
+        Check if the environment is Hosted Engine
+        '''
+        SQL_QUERY = (
+            "SELECT                           "
+            "    vm_name,                     "
+            "    host_name                    "
+            "FROM                             "
+            "    vms, vds                     "
+            "WHERE                            "
+            "    vms.run_on_vds=vds.vds_id AND"
+            "    vms.origin = 6               "
+        )
+        ret = self.execute_cmd_check_output(
+                'engine-db-query --json -s "{cmd}"'.format(cmd=SQL_QUERY)
+        )
+
+        if ret:
+            data = json.loads(ret)
+            for result in data['result']:
+                for ret in result:
+                    self.hosted_engine = ret['vm_name']
+                    self.hosted_engine_host = ret['host_name']
+
+    def he_set_maintenance_global(self):
+        '''
+        Hosted Engine - Set Maintenance Global
+        '''
+        self.check_he_running()
+        if self.hosted_engine is not None:
+            self.print_msg(
+                'Hosted Engine - Setting Maintenance Global',
+                MsgType.INFO
+            )
+            self.execute_cmd_remote_host_check_output(
+                self.hosted_engine_host,
+                self.HE_SET_MAINTENANCE_GLOBAL
+            )
+
+    def he_set_maintenance_none(self):
+        '''
+        Hosted Engine - Set Maintenance None
+        '''
+        self.check_he_running()
+        if self.hosted_engine is not None:
+            self.print_msg(
+                'Hosted Engine - Setting Maintenance None',
+                MsgType.INFO
+            )
+            self.execute_cmd_remote_host_check_output(
+                self.hosted_engine_host,
+                self.HE_SET_MAINTENANCE_NONE
+            )
+
     def run_engine_setup(self):
         '''
         Execute engine-setup or exit in case of failure
         '''
+
+        # Check if HE is running and set maint global
+        self.he_set_maintenance_global()
+
         if self.execute_cmd(self.ENGINE_SETUP) != 0:
             self.print_msg(
                 'Aborting.. engine-setup failed...',
                 MsgType.ERROR
             )
+            self.he_set_maintenance_none()
             sys.exit(2)
+
+        self.he_set_maintenance_none()
 
     def update_system(self):
         '''
