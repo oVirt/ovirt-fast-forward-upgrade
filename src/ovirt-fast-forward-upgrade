@@ -179,7 +179,7 @@ class Base(logging.Handler):
         Returns: output from command or exit
         """
         # We don't need to print the SQL queries
-        if not "engine-db-query" in command:
+        if "engine-db-query" not in command:
             self.print_msg(
                 'Executing: {cmd}'.format(cmd=command),
                 MsgType.INFO
