@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import rpm
+import signal
 import subprocess
 import sys
 import tempfile
@@ -694,6 +695,9 @@ def main():
 
 
 if __name__ == '__main__':
+
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTSTP, signal.SIG_IGN)
 
     if os.geteuid() != 0:
         sys.exit("User root is required for this program manage "
