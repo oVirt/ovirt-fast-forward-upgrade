@@ -297,7 +297,7 @@ class Subscriptions(Base):
                 'continue? [N/y]'
             ).lower().strip()
             if not continue_upgrade or continue_upgrade[0] != "y":
-                logger.info('Aborting...')
+                self.logger.info('Aborting...')
                 sys.exit(0)
             required = set(RHV_42_REPOS)
         else:
