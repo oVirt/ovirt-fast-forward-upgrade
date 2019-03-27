@@ -41,6 +41,7 @@ Requires: ovirt-engine-setup-base
 Requires: ovirt-engine-setup-plugin-ovirt-engine
 Requires: yum
 Requires: rpm-python
+Requires: engine-db-query
 
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
