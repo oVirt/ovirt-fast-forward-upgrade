@@ -291,11 +291,12 @@ class Subscriptions(Base):
         elif version == '4.1':
             required = set(RHV_41_REPOS)
         elif version == '4.2':
-            continue_upgrade = raw_input(
+            print(
                 'Upgrading to RHV 4.3... cluster compatibility version '
                 '3.6 and 4.0 are not supported. Are you sure you want to '
                 'continue? [N/y]'
-            ).lower().strip()
+            ),
+            continue_upgrade = sys.stdin.readline().lower().strip()
             if not continue_upgrade or continue_upgrade[0] != "y":
                 self.logger.info('Aborting...')
                 sys.exit(0)
@@ -648,10 +649,11 @@ def main():
         if release['version'] == version:
             upgrade_supported = True
             if c.check_rhv_repos(release['version']) is False:
-                continue_upgrade = raw_input(
+                print(
                     'Are you sure you want to continue? It might generate '
                     'conflicts on RPM dependency. [N/y]'
-                ).lower().strip()
+                ),
+                continue_upgrade = sys.stdin.readline().lower().strip()
                 if not continue_upgrade or continue_upgrade[0] != "y":
                     logger.info('Aborting...')
                     sys.exit(0)
