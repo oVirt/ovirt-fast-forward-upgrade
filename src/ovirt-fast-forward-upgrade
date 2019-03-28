@@ -423,6 +423,57 @@ class UpgradeHelper(Base):
         super(UpgradeHelper, self).__init__()
         self.hosted_engine = None
         self.hosted_engine_host = None
+        self.welcome_msg()
+
+    def welcome_msg(self):
+
+        '''
+        Welcome message and supported matrix
+        '''
+
+        self.print_msg(
+            "Welcome to upgrade helper!\n\n"
+            "A few reminders before we start:\n\n"
+
+            "- Make sure Engine backup is updated!\n\n"
+
+            "- This is an incremental upgrade tool. RHV doesn't support\n"
+            "  direct upgrades, example: from 4.0 directly to 4.2\n\n"
+
+            "- Red Hat Virtualization clusters have a compatibility version.\n"
+            "  The cluster compatibility version indicates the features of \n"
+            "  Red Hat Virtualization supported by all of the hosts in the\n"
+            "  cluster.\n\n"
+
+            "- The cluster compatibility is set according to the version of\n"
+            "  the least capable host operating system in the cluster.\n\n"
+
+            "- To change the cluster compatibility version, you must"
+            " have first\n"
+            "  updated all the hosts in your cluster to a"
+            " level that supports\n"
+            "  your desired compatibility level. Check if there is an icon \n"
+            "  next to the host indicating an update is available.\n\n"
+
+            "+----------------------------------------------+\n"
+            "| Red Hat Virtualization Manager Compatibility |\n"
+            "+----------------------------------------------+\n"
+            "| RHV Release | Cluster Compability Levels     |\n"
+            "|----------------------------------------------|\n"
+            "|   4.0       |  4.0, 3.6                      |\n"
+            "|   4.1       |  4.1, 4.0, 3.6                 |\n"
+            "|   4.2       |  4.2, 4.1, 4.0, 3.6            |\n"
+            "|   4.3       |  4.3, 4.2, 4.1                 |\n"
+            "+----------------------------------------------+\n",
+            MsgType.INFO
+        )
+        print(
+            'Are you sure you want to continue? [N/y]'
+        ),
+        continue_upgrade = sys.stdin.readline().lower().strip()
+        if not continue_upgrade or continue_upgrade[0] != "y":
+            self.print_msg("Aborting....")
+            sys.exit(0)
 
     def is_upgrade_available(self):
         '''
