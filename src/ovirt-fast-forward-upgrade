@@ -68,17 +68,23 @@ CHECK_RELEASES['repos'] = [
     {
         'version': '4.0',
         'repo_to_enable': set(RHV_41_REPOS) - set(RHV_40_REPOS),
-        'repo_to_disable': set(RHV_40_REPOS) - set(RHV_41_REPOS)
+        'repo_to_disable': set(RHV_40_REPOS) - set(RHV_41_REPOS),
+        'next_upgrade': '4.1',
+        'cluster_level_for_next_upgrade': "'4.1', '4.0', '3.6'"
     },
     {
         'version': '4.1',
         'repo_to_enable': set(RHV_42_REPOS) - set(RHV_41_REPOS),
-        'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_REPOS)
+        'repo_to_disable': set(RHV_41_REPOS) - set(RHV_42_REPOS),
+        'next_upgrade': '4.2',
+        'cluster_level_for_next_upgrade': "'4.2', '4.1', '4.0', '3.6'"
     },
     {
         'version': '4.2',
         'repo_to_enable': set(RHV_43_REPOS) - set(RHV_42_REPOS),
-        'repo_to_disable': set(RHV_42_REPOS) - set(RHV_43_REPOS)
+        'repo_to_disable': set(RHV_42_REPOS) - set(RHV_43_REPOS),
+        'next_upgrade': '4.3',
+        'cluster_level_for_next_upgrade': "'4.3', '4.2', '4.1'"
     }
 ]
 
@@ -291,15 +297,6 @@ class Subscriptions(Base):
         elif version == '4.1':
             required = set(RHV_41_REPOS)
         elif version == '4.2':
-            print(
-                'Upgrading to RHV 4.3... cluster compatibility version '
-                '3.6 and 4.0 are not supported. Are you sure you want to '
-                'continue? [N/y]'
-            ),
-            continue_upgrade = sys.stdin.readline().lower().strip()
-            if not continue_upgrade or continue_upgrade[0] != "y":
-                self.logger.info('Aborting...')
-                sys.exit(0)
             required = set(RHV_42_REPOS)
         else:
             raise RuntimeError('Version parameters not supported!')
@@ -424,6 +421,7 @@ class UpgradeHelper(Base):
         self.hosted_engine = None
         self.hosted_engine_host = None
         self.welcome_msg()
+        self.major_version_engine = None
 
     def welcome_msg(self):
 
@@ -592,7 +590,6 @@ class UpgradeHelper(Base):
         Detect major version of oVirt Engine
         '''
         engine_package = 'ovirt-engine'
-        major_version_engine = None
 
         ts = rpm.TransactionSet()
         mi = ts.dbMatch()
@@ -600,14 +597,14 @@ class UpgradeHelper(Base):
         for package in mi:
             if package['name'] == engine_package:
                 # Get the major version
-                major_version_engine = package['version'][:3]
+                self.major_version_engine = package['version'][:3]
 
                 self.logger.debug(
                     'Major version {pkg}: {majorv}'.format(
-                        pkg=engine_package, majorv=major_version_engine)
+                        pkg=engine_package, majorv=self.major_version_engine)
                 )
 
-        if major_version_engine is None:
+        if self.major_version_engine is None:
             self.print_msg(
                 'Aborting.. unable to find {pkg} package to detect major '
                 'version...'.format(pkg=engine_package),
@@ -615,7 +612,7 @@ class UpgradeHelper(Base):
             )
             sys.exit(2)
 
-        return major_version_engine
+        return self.major_version_engine
 
     def run_engine_backup(self, dir_to_save_backup):
         '''
@@ -646,6 +643,34 @@ class UpgradeHelper(Base):
                 MsgType.ERROR
             )
             sys.exit(2)
+
+    def check_cluster_compatibility_for_next_upgrade(self, cluster_level):
+        '''
+        Check if all clusters are compatible with next
+        upgrade
+
+        cluster_level - Cluster Level supported in the next upgrade
+        '''
+
+        SQL_QUERY = (
+            "SELECT                            "
+            "     name,                        "
+            "     compatibility_version        "
+            " FROM                             "
+            "     storage_pool                 "
+            " WHERE                            "
+            "    compatibility_version IN ({0})".format(cluster_level)
+        )
+
+        self.logger.debug(
+            "Checking for cluster compability: {0}".format(SQL_QUERY)
+        )
+
+        ret = self.execute_cmd_check_output(
+                'engine-db-query --json -s "{cmd}"'.format(cmd=SQL_QUERY)
+        )
+
+        return ret
 
 
 def main():
@@ -696,6 +721,30 @@ def main():
     u = UpgradeHelper()
     for release in CHECK_RELEASES['repos']:
         version = u.detect_major_version_engine()
+
+        logger.info(
+            "\nDetected RHV version {0}, target upgrade: {1}".format(
+                version, release['next_upgrade'])
+        )
+
+        if not u.check_cluster_compatibility_for_next_upgrade(
+            release['cluster_level_for_next_upgrade']
+        ):
+            logger.error('Aborting...')
+            logger.error(
+                "It is not possible to upgrade to {0}, the current"
+                " cluster level in the environment is unsupported!\n"
+                "Please check Red Hat Virtualization Manager Comp"
+                "atibility Matrix.".format(
+                    release['next_upgrade'])
+            )
+            sys.exit(-1)
+
+        print("Do you want to proceed? [N/y]"),
+        continue_upgrade = sys.stdin.readline().lower().strip()
+        if not continue_upgrade or continue_upgrade[0] != "y":
+            logger.info('Aborting...')
+            sys.exit(0)
 
         if release['version'] == version:
             upgrade_supported = True
