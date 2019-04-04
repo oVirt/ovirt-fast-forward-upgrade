@@ -465,13 +465,6 @@ class UpgradeHelper(Base):
             "+----------------------------------------------+\n",
             MsgType.INFO
         )
-        print(
-            'Are you sure you want to continue? [N/y]'
-        ),
-        continue_upgrade = sys.stdin.readline().lower().strip()
-        if not continue_upgrade or continue_upgrade[0] != "y":
-            self.print_msg("Aborting....")
-            sys.exit(0)
 
     def is_upgrade_available(self):
         '''
@@ -644,6 +637,34 @@ class UpgradeHelper(Base):
             )
             sys.exit(2)
 
+    def show_cluster_not_compatible_for_next_upgrade(self, cluster_level):
+        '''
+        Show cluster(s) not compatible for next upgrade
+
+        cluster_level - Cluster Level supported in the next upgrade
+        '''
+
+        SQL_QUERY = (
+            'SELECT                                       '
+            '     name AS "Cluster",                      '
+            '     compatibility_version AS "Compatibility"'
+            ' FROM                                        '
+            '     storage_pool                            '
+            ' WHERE                                       '
+            '    compatibility_version NOT IN ({0})'.format(cluster_level)
+        )
+
+        self.logger.debug(
+            "Checking cluster(s) not compatible for next release..."
+        )
+        self.logger.debug(SQL_QUERY)
+
+        ret = self.execute_cmd_check_output(
+                'engine-db-query -s "{cmd}"'.format(cmd=SQL_QUERY)
+        )
+
+        return ret
+
     def check_cluster_compatibility_for_next_upgrade(self, cluster_level):
         '''
         Check if all clusters are compatible with next
@@ -722,10 +743,19 @@ def main():
     for release in CHECK_RELEASES['repos']:
         version = u.detect_major_version_engine()
 
+        if version not in release['version']:
+            continue
+
         logger.info(
             "\nDetected RHV version {0}, target upgrade: {1}".format(
                 version, release['next_upgrade'])
         )
+
+        print("Do you want to proceed? [N/y]"),
+        continue_upgrade = sys.stdin.readline().lower().strip()
+        if not continue_upgrade or continue_upgrade[0] != "y":
+            logger.info('Aborting...')
+            sys.exit(0)
 
         if not u.check_cluster_compatibility_for_next_upgrade(
             release['cluster_level_for_next_upgrade']
@@ -733,18 +763,20 @@ def main():
             logger.error('Aborting...')
             logger.error(
                 "It is not possible to upgrade to {0}, the current"
-                " cluster level in the environment is unsupported!\n"
-                "Please check Red Hat Virtualization Manager Comp"
-                "atibility Matrix.".format(
+                " cluster level in the environment is unsupported,"
+                " check cluster below:\n".format(
                     release['next_upgrade'])
             )
+            print(
+                u.show_cluster_not_compatible_for_next_upgrade(
+                    release['cluster_level_for_next_upgrade']
+                )
+            )
+            logger.error(
+                "Please check Red Hat Virtualization Manager Comp"
+                "atibility Matrix."
+            )
             sys.exit(-1)
-
-        print("Do you want to proceed? [N/y]"),
-        continue_upgrade = sys.stdin.readline().lower().strip()
-        if not continue_upgrade or continue_upgrade[0] != "y":
-            logger.info('Aborting...')
-            sys.exit(0)
 
         if release['version'] == version:
             upgrade_supported = True
