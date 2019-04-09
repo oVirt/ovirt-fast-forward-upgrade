@@ -821,8 +821,8 @@ def main():
 
     logger.info("Please reboot the system to complete the update.")
     logger.info(
-        "Once rebooted, please change the cluster and datacenter "
-        "compatibility level to the latest version.\n"
+        "Once rebooted, please update your hypervisors and change the cluster "
+        "and datacenter compatibility level to the latest version.\n"
     )
 
     return 0
