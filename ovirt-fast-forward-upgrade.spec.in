@@ -37,8 +37,6 @@ Source0:       http://resources.ovirt.org/pub/ovirt-master-snapshot/src/%{packag
 BuildArch:     noarch
 
 Requires: subscription-manager
-Requires: ovirt-engine-setup-base
-Requires: ovirt-engine-setup-plugin-ovirt-engine
 Requires: yum
 Requires: rpm-python
 Requires: engine-db-query
