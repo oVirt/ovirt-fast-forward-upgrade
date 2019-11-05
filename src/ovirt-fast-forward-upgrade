@@ -485,11 +485,12 @@ class UpgradeHelper(Base):
         yum_update_engine_cmd = list(self.YUM_UPDATE_CMD)
         yum_update_engine_cmd.extend([
             'ovirt-engine-*setup*',
+            'rh*vm-setup-plugins',
         ])
 
         if self.execute_cmd(yum_update_engine_cmd) != 0:
             self.print_msg(
-                'Aborting.. yum update ovirt-engine-*setup* failed...',
+                'Aborting.. yum update ovirt-engine-*setup* rh*vm-setup-plugins failed...',
                 MsgType.ERROR
             )
             sys.exit(2)
