@@ -693,6 +693,27 @@ class UpgradeHelper(Base):
 
         return ret
 
+    def check_sha256(self):
+        guide_link = ("https://access.redhat.com/documenta"
+                      "tion/en-us/red_hat_virtualization/4.3"
+                      "/html-single/upgrade_guide/index#Repl"
+                      "acing_SHA-1_Certificates_with_SHA-256"
+                      "_Certificates_4-1_local_db%22")
+        warning_msg = ("You are using the deprecated SHA-1, "
+            "please use SHA-256 "
+            "instead: \n"
+            "sed -i 's/^default_md = sha1/default_md = sha256/'"
+            " /etc/pki/ovirt-engine/openssl.conf\n\n"
+            " See: {guide_link}".format(guide_link=guide_link)
+        )
+        with open("/etc/pki/ovirt-engine/openssl.conf") as search:
+            for line in search:
+                if 'sha1' in line:
+                    self.logger.error(warning_msg)
+                    return False
+
+        return True
+
 
 def main():
     '''
@@ -740,6 +761,12 @@ def main():
     upgrade_supported = False
 
     u = UpgradeHelper()
+    if not u.check_sha256():
+        print("Do you want to proceed with the upgrade regardless? [N/y]"),
+        continue_upgrade = sys.stdin.readline().lower().strip()
+        if not continue_upgrade or continue_upgrade[0] != "y":
+            logger.error("Aborting...")
+            sys.exit(0)
     for release in CHECK_RELEASES['repos']:
         version = u.detect_major_version_engine()
 
