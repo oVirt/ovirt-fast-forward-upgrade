@@ -17,7 +17,7 @@ define([VERSION_SUFFIX], [_master])
 AC_INIT([ovirt-fast-forward-upgrade], VERSION_NUMBER[]VERSION_SUFFIX, [devel@ovirt.org])
 PACKAGE_NAME="ovirt-fast-forward-upgrade"
 PACKAGE_RPM_VERSION="VERSION_NUMBER"
-PACKAGE_RPM_RELEASE="9"
+PACKAGE_RPM_RELEASE="14"
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability tar-pax])
 
 AC_SUBST([PACKAGE_RPM_VERSION])
