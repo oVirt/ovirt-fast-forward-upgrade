@@ -492,6 +492,53 @@ class UpgradeHelper(Base):
         '''
         return self.execute_cmd(self.UPGRADE_CHECK)
 
+    def is_engine_updated(self):
+        '''
+        Detects versions of oVirt Engine and oVirt Engine Setup
+        Returns: true is case both versions match.
+        '''
+        engine_package = 'ovirt-engine'
+        engine_setup_package = 'ovirt-engine-setup'
+
+        ts = rpm.TransactionSet()
+        mi = ts.dbMatch()
+
+        for package in mi:
+            if package['name'] == engine_package:
+                # Get the oVirt engine version
+                self.version_engine = package['version']
+
+                self.logger.debug(
+                    'oVirt engine version {pkg}: {majorv}'.format(
+                        pkg=engine_package, majorv=self.version_engine)
+                )
+            if package['name'] == engine_setup_package:
+                # Get the oVirt engine setup version
+                self.version_engine_setup = package['version']
+
+                self.logger.debug(
+                    'oVirt engine setup version {pkg}: {majorv}'.format(
+                        pkg=engine_package, majorv=self.version_engine_setup)
+                )
+
+        if self.version_engine is None:
+            self.print_msg(
+                'Aborting.. unable to find {pkg} package to detect oVirt '
+                'engine version...'.format(pkg=engine_package),
+                MsgType.ERROR
+            )
+            sys.exit(2)
+
+        if self.version_engine_setup is None:
+            self.print_msg(
+                'Aborting.. unable to find {pkg} package to detect oVirt '
+                'engine setup version...'.format(pkg=engine_setup_package),
+                MsgType.ERROR
+            )
+            sys.exit(2)
+
+        return self.version_engine == self.version_engine_setup
+
     def upgrade_engine_setup(self):
         '''
         Look for packages with ovirt-engine-setup* name
@@ -844,6 +891,8 @@ def main():
                                 version=release['version']))
 
                 u.upgrade_engine_setup()
+
+            if u.is_engine_updated() not True:
                 u.run_engine_setup()
 
             u.update_system()
