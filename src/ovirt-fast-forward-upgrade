@@ -94,7 +94,7 @@ CHECK_RELEASES['repos'] = [
         'repo_to_disable': set(RHV_42_REPOS) - set(RHV_43_REPOS),
         'next_upgrade': '4.3',
         'cluster_level_for_next_upgrade': "'4.3', '4.2', '4.1'"
-    }
+    },
     {
         'version': '4.3',
         'repo_to_enable': set(RHV_44_REPOS) - set(RHV_43_REPOS),
