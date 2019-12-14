@@ -876,7 +876,7 @@ def main():
 
                 u.upgrade_engine_setup()
 
-            if u.is_engine_updated() is not True:
+            if u.is_engine_updated() not True:
                 u.run_engine_setup()
 
             u.update_system()
