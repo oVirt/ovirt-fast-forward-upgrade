@@ -88,7 +88,10 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 %{_mandir}/man8/*
 
 %changelog
-* Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.1-0
+* Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.2-0
+- explicit call python2
+
+* Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.2-0
 - update spec file for EL8 build
 
 * Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.1-0
