@@ -253,6 +253,7 @@ class Subscriptions(Base):
 
         rhsm_cmd = [
             'env',
+            '-i',
             'LC_ALL=C',
             'subscription-manager',
             'repos',
@@ -338,6 +339,7 @@ class Subscriptions(Base):
 
         SUBSCRIPTION_MANAGER_CMD = [
             'env',
+            '-i',
             'LC_ALL=C',
             'subscription-manager',
             'repos'
@@ -384,24 +386,28 @@ class UpgradeHelper(Base):
 
     UPGRADE_CHECK = [
         'env',
+        '-i',
         'LC_ALL=C',
         'engine-upgrade-check'
     ]
 
     YUM_UPDATE_CMD = [
         'env',
+        '-i',
         'LC_ALL=C',
         'yum', 'update'
     ]
 
     ENGINE_SETUP = [
         'env',
+        '-i',
         'LC_ALL=C',
         'engine-setup'
     ]
 
     HE_SET_MAINTENANCE_NONE = (
         "env "
+        "-i "
         "LC_ALL=C "
         "hosted-engine "
         "--set-maintenance "
@@ -410,6 +416,7 @@ class UpgradeHelper(Base):
 
     HE_SET_MAINTENANCE_GLOBAL = (
         "env "
+        "-i "
         "LC_ALL=C "
         "hosted-engine "
         "--set-maintenance "
@@ -670,6 +677,7 @@ class UpgradeHelper(Base):
 
         ENGINE_BACKUP_CMD = [
             'env',
+            '-i',
             'LC_ALL=C',
             'engine-backup',
             '--scope=all',
