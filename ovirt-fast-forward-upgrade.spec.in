@@ -32,7 +32,7 @@ BuildArch:     noarch
 
 Requires: subscription-manager
 Requires: yum
-Requires: rpm-python
+Requires: python3-rpm
 Requires: engine-db-query
 
 BuildRequires: python3-devel
@@ -82,6 +82,9 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 %{_mandir}/man8/*
 
 %changelog
+* Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.5-0
+- spec: adjust requirement for python3
+
 * Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.4-0
 - convert to python3
 
