@@ -88,6 +88,9 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 %{_mandir}/man8/*
 
 %changelog
+* Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.1-0
+- Set empty environment to execute commands
+
 * Thu Oct 25 2018 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-4
 - 1.0.0-4 build
 
