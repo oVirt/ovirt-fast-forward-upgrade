@@ -1,14 +1,8 @@
 %global         package_version @PACKAGE_VERSION@
 %global         package_name @PACKAGE_NAME@
 
-%if 0%{?fedora}
-%global         with_python3 1
 %global         __python_bin %{__python3}
 %global         __python_sitelib %{python3_sitelib}
-%else
-%global         __python_bin %{__python2}
-%global         __python_sitelib %{python2_sitelib}
-%endif
 
 # Skips check since rhel default repos lack flake8
 %if ! 0%{?rhel}
@@ -41,12 +35,12 @@ Requires: yum
 Requires: rpm-python
 Requires: engine-db-query
 
-BuildRequires: python2-devel
-BuildRequires: python2-setuptools
+BuildRequires: python3-devel
+BuildRequires: python3-setuptools
 
 %if 0%{?with_check}
-BuildRequires: python-tools
-BuildRequires: python-flake8
+BuildRequires: python3-tools
+BuildRequires: python3-flake8
 %endif
 
 # Autotools BuildRequires
@@ -88,7 +82,10 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 %{_mandir}/man8/*
 
 %changelog
-* Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.2-0
+* Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.4-0
+- convert to python3
+
+* Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.3-0
 - explicit call python2
 
 * Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.2-0

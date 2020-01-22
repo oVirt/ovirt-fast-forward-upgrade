@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -834,7 +834,7 @@ def main():
 
     u = UpgradeHelper()
     if not u.check_sha256():
-        print("Do you want to proceed with the upgrade regardless? [N/y]"),
+        #print(("Do you want to proceed with the upgrade regardless? [N/y]"), end=' ')
         continue_upgrade = sys.stdin.readline().lower().strip()
         if not continue_upgrade or continue_upgrade[0] != "y":
             logger.error("Aborting...")
@@ -850,7 +850,7 @@ def main():
                 version, release['next_upgrade'])
         )
 
-        print("Do you want to proceed? [N/y]"),
+        #print(("Do you want to proceed? [N/y]"), end=' ')
         continue_upgrade = sys.stdin.readline().lower().strip()
         if not continue_upgrade or continue_upgrade[0] != "y":
             logger.info('Aborting...')
@@ -866,11 +866,11 @@ def main():
                 " check cluster below:\n".format(
                     release['next_upgrade'])
             )
-            print(
+            print((
                 u.show_cluster_not_compatible_for_next_upgrade(
                     release['cluster_level_for_next_upgrade']
                 )
-            )
+            ))
             logger.error(
                 "Please check Red Hat Virtualization Manager Comp"
                 "atibility Matrix."
@@ -880,10 +880,10 @@ def main():
         if release['version'] == version:
             upgrade_supported = True
             if c.check_rhv_repos(release['version']) is False:
-                print(
+                print((
                     'Are you sure you want to continue? It might generate '
                     'conflicts on RPM dependency. [N/y]'
-                ),
+                ), end=' ')
                 continue_upgrade = sys.stdin.readline().lower().strip()
                 if not continue_upgrade or continue_upgrade[0] != "y":
                     logger.info('Aborting...')
