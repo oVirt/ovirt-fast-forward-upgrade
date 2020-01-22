@@ -42,7 +42,7 @@ Requires: rpm-python
 Requires: engine-db-query
 
 BuildRequires: python2-devel
-BuildRequires: python-setuptools
+BuildRequires: python2-setuptools
 
 %if 0%{?with_check}
 BuildRequires: python-tools
@@ -88,6 +88,9 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 %{_mandir}/man8/*
 
 %changelog
+* Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.1-0
+- update spec file for EL8 build
+
 * Wed Jan 22 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.1.1-0
 - Set empty environment to execute commands
 
