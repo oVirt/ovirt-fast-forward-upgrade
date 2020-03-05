@@ -269,6 +269,7 @@ class Subscriptions(Base):
 
         rhsm_cmd = [
             'env',
+            '-i',
             'LC_ALL=C',
             'subscription-manager',
             'repos',
@@ -354,6 +355,7 @@ class Subscriptions(Base):
 
         SUBSCRIPTION_MANAGER_CMD = [
             'env',
+            '-i',
             'LC_ALL=C',
             'subscription-manager',
             'repos'
