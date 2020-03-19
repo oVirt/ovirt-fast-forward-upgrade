@@ -10,14 +10,14 @@
 # GNU General Public License for more details.
 define([VERSION_MAJOR], [1])
 define([VERSION_MINOR], [0])
-define([VERSION_FIX], [1])
+define([VERSION_FIX], [2])
 define([VERSION_NUMBER], VERSION_MAJOR[.]VERSION_MINOR[.]VERSION_FIX)
-define([VERSION_SUFFIX], [])
+define([VERSION_SUFFIX], [_master])
 
 AC_INIT([ovirt-fast-forward-upgrade], VERSION_NUMBER[]VERSION_SUFFIX, [devel@ovirt.org])
 PACKAGE_NAME="ovirt-fast-forward-upgrade"
 PACKAGE_RPM_VERSION="VERSION_NUMBER"
-PACKAGE_RPM_RELEASE="1"
+PACKAGE_RPM_RELEASE="0"
 AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability tar-pax])
 
 AC_SUBST([PACKAGE_RPM_VERSION])
