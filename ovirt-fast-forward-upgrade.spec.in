@@ -88,6 +88,42 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 %{_mandir}/man8/*
 
 %changelog
+* Tue Feb 04 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-17
+- ovirt-fast-forward-upgrade: Set empty environment to execute
+
+* Sat Dec 14 2019 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-16
+- ovirt-fast-forward-upgrade: Add engine update verification
+- ovirt-fast-forward-upgrade: fix typo in if statement
+
+* Tue Jul 29 2019 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-13
+- check if sha256 is used
+- add rhvm-setup-plugins to yum update
+
+
+* Thu Apr 11 2019 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-12
+- Remove beta channels
+
+* Wed Apr 10 2019 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-11
+- Ask for the hosts upgrade after the end
+- spec: remove engine setup requirements
+
+* Thu Apr 04 2019 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-8
+- ovirt-fast-forward-upgrade: compatibility improvements
+- ovirt-fast-forward-upgrade: detect unsupported clusters
+- ovirt-fast-forward-upgrade: Add welcome message
+- ovirt-fast-forward-upgrade: replace raw_input
+- E713 test for membership should be 'not in'
+- ovirt-fast-forward-upgrade: add missing self
+- ovirt-fast-forward-upgrade: ignore ctrl-c and ctrl-z
+- ovirt-fast-forward-upgrade:: support hosted-engine (HE)
+- ovirt-fast-forward-upgrade: update jb-eap channels
+
+* Tue Feb 05 2019 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-7
+- ovirt-fast-forward-upgrade: warning for 4.3 upgrades
+
+* Mon Jan 21 2019 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-6
+- Add 4.3 beta channels
+
 * Thu Oct 25 2018 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-4
 - 1.0.0-4 build
 
