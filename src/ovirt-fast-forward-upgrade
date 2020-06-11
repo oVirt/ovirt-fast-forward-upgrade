@@ -555,7 +555,7 @@ class UpgradeHelper(Base):
 
         if self.execute_cmd(yum_update_engine_cmd) != 0:
             self.print_msg(
-                'Aborting.. yum update ovirt-engine-*setup* rh*vm-setup-plugins failed...',
+                'Aborting.. yum update failed...',
                 MsgType.ERROR
             )
             sys.exit(2)
@@ -766,12 +766,11 @@ class UpgradeHelper(Base):
                       "acing_SHA-1_Certificates_with_SHA-256"
                       "_Certificates_4-1_local_db%22")
         warning_msg = ("You are using the deprecated SHA-1, "
-            "please use SHA-256 "
-            "instead: \n"
-            "sed -i 's/^default_md = sha1/default_md = sha256/'"
-            " /etc/pki/ovirt-engine/openssl.conf\n\n"
-            " See: {guide_link}".format(guide_link=guide_link)
-        )
+                       "please use SHA-256 "
+                       "instead: \n"
+                       "sed -i 's/^default_md = sha1/default_md = sha256/'"
+                       " /etc/pki/ovirt-engine/openssl.conf\n\n"
+                       " See: {guide_link}".format(guide_link=guide_link))
         with open("/etc/pki/ovirt-engine/openssl.conf") as search:
             for line in search:
                 if 'sha1' in line:
@@ -828,7 +827,6 @@ def main():
 
     u = UpgradeHelper()
     if not u.check_sha256():
-        #print(("Do you want to proceed with the upgrade regardless? [N/y]"), end=' ')
         continue_upgrade = sys.stdin.readline().lower().strip()
         if not continue_upgrade or continue_upgrade[0] != "y":
             logger.error("Aborting...")
@@ -844,7 +842,6 @@ def main():
                 version, release['next_upgrade'])
         )
 
-        #print(("Do you want to proceed? [N/y]"), end=' ')
         continue_upgrade = sys.stdin.readline().lower().strip()
         if not continue_upgrade or continue_upgrade[0] != "y":
             logger.info('Aborting...')
@@ -870,6 +867,23 @@ def main():
                 "atibility Matrix."
             )
             sys.exit(-1)
+
+        if release['cluster_level_for_next_upgrade'] == "4.4":
+            with open('/etc/os-release', 'r') as f:
+                for line in f:
+                    if "VERSION_ID=" in line:
+                        version_detected = line.strip().split(".")[0]
+                        if "." not in version_detected:
+                            logger.error("Cannot detect version: os-release")
+                            sys.exit(-1)
+                        if version_detected == "7":
+                            logger.error(
+                                "upgrading your host's operating system "
+                                "to RHEL 8.2 or higher."
+                            )
+                            sys.exit(-1)
+                        elif version_detected == "8":
+                            break
 
         if release['version'] == version:
             upgrade_supported = True
