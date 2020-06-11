@@ -62,12 +62,12 @@ RHV_43_REPOS = [
 ]
 
 RHV_44_REPOS = [
-    "rhel-7-server-supplementary-rpms",
-    "rhel-7-server-rpms",
-    "rhel-7-server-rhv-4.4-manager-rpms",
-    "rhel-7-server-rhv-4-manager-tools-rpms",
-    "rhel-7-server-ansible-2-rpms",
-    "jb-eap-7.3-for-rhel-7-server-rpms"
+    "rhel-8-for-x86_64-baseos-rpms",
+    "rhel-8-for-x86_64-appstream-rpms",
+    "rhv-4-manager-beta-for-rhel-8-x86_64-rpms",
+    "ansible-2.9-for-rhel-8-x86_64-rpms",
+    "jb-eap-7.3-for-rhel-8-x86_64-rpms",
+    "fast-datapath-for-rhel-8-x86_64-rpms"
 ]
 
 # Dictionary that keep the release data like:
@@ -315,6 +315,8 @@ class Subscriptions(Base):
             required = set(RHV_41_REPOS)
         elif version == '4.2':
             required = set(RHV_42_REPOS)
+        elif version == '4.3':
+            required = set(RHV_43_REPOS)
         else:
             raise RuntimeError('Version parameters not supported!')
 
@@ -480,6 +482,7 @@ class UpgradeHelper(Base):
             "|   4.1       |  4.1, 4.0, 3.6                 |\n"
             "|   4.2       |  4.2, 4.1, 4.0, 3.6            |\n"
             "|   4.3       |  4.3, 4.2, 4.1                 |\n"
+            "|   4.4       |  4.3, 4.2                      |\n"
             "+----------------------------------------------+\n",
             MsgType.INFO
         )
@@ -837,6 +840,28 @@ def main():
         if version not in release['version']:
             continue
 
+        if "4.4" in release['cluster_level_for_next_upgrade']:
+            with open('/etc/os-release', 'r') as f:
+                for line in f:
+                    if "VERSION_ID=" in line:
+
+                        if "." not in line:
+                            logger.error("Cannot detect version: os-release")
+                            sys.exit(-1)
+
+                        ver_detected = line.replace("VERSION_ID=", "")
+                        ver_detected = ver_detected.strip().split(".")[0]
+                        ver_detected = ver_detected.replace("\"", "")
+
+                        if ver_detected == "7":
+                            logger.error(
+                                "Exiting... RHV 4.4 requires upgrading "
+                                "operating system to RHEL 8.2 or higher."
+                            )
+                            sys.exit(-1)
+                        elif ver_detected == "8":
+                            break
+
         logger.info(
             "\nDetected RHV version {0}, target upgrade: {1}".format(
                 version, release['next_upgrade'])
@@ -867,23 +892,6 @@ def main():
                 "atibility Matrix."
             )
             sys.exit(-1)
-
-        if release['cluster_level_for_next_upgrade'] == "4.4":
-            with open('/etc/os-release', 'r') as f:
-                for line in f:
-                    if "VERSION_ID=" in line:
-                        version_detected = line.strip().split(".")[0]
-                        if "." not in version_detected:
-                            logger.error("Cannot detect version: os-release")
-                            sys.exit(-1)
-                        if version_detected == "7":
-                            logger.error(
-                                "upgrading your host's operating system "
-                                "to RHEL 8.2 or higher."
-                            )
-                            sys.exit(-1)
-                        elif version_detected == "8":
-                            break
 
         if release['version'] == version:
             upgrade_supported = True
