@@ -48,7 +48,7 @@ RHV_42_REPOS = [
     "rhel-7-server-rpms",
     "rhel-7-server-rhv-4.2-manager-rpms",
     "rhel-7-server-rhv-4-manager-tools-rpms",
-    "rhel-7-server-ansible-2-rpms",
+    "rhel-7-server-ansible-2.9-rpms",
     "jb-eap-7-for-rhel-7-server-rpms"
 ]
 
@@ -57,7 +57,7 @@ RHV_43_REPOS = [
     "rhel-7-server-rpms",
     "rhel-7-server-rhv-4.3-manager-rpms",
     "rhel-7-server-rhv-4-manager-tools-rpms",
-    "rhel-7-server-ansible-2-rpms",
+    "rhel-7-server-ansible-2.9-rpms",
     "jb-eap-7.2-for-rhel-7-server-rpms"
 ]
 
