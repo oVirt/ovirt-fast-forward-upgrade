@@ -88,6 +88,9 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 %{_mandir}/man8/*
 
 %changelog
+* Tue Jun 16 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.2-1
+- sync with master
+
 * Tue Feb 04 2020 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-17
 - ovirt-fast-forward-upgrade: Set empty environment to execute
 
@@ -95,7 +98,7 @@ ln -sf %{_mandir}/man8/ovirt-fast-forward-upgrade.* %{_mandir}/man8/engine-fast-
 - ovirt-fast-forward-upgrade: Add engine update verification
 - ovirt-fast-forward-upgrade: fix typo in if statement
 
-* Tue Jul 29 2019 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-13
+* Mon Jul 29 2019 Douglas Schilling Landgraf <dougsland@redhat.com> 1.0.0-13
 - check if sha256 is used
 - add rhvm-setup-plugins to yum update
 
