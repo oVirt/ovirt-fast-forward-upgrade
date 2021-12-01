@@ -1,13 +1,19 @@
 # ovirt-fast-forward-upgrade
 
+> IMPORTANT: This project has been dropped from oVirt starting with oVirt 4.5 release.
+> See [BZ#2028200](https://bugzilla.redhat.com/show_bug.cgi?id=2028200).
+>
+> Keeping the following section only for reference.
+
+
 About
 =====
 The ovirt-fast-forward-upgrade is a wrapper tool to automate oVirt Engine upgrades.
 
-**Supported versions**:  
+**Supported versions**:
 4.0 or higher
 
-**Description**:  
+**Description**:
 *First stage*, the tool detects the current version of RHVM running on the system and check if there are updates
 available related to minor version detected. If there are updates available, update all ovirt-engine-\*setup
 packages via yum and execute engine-setup to complete the update. After the update is completed, update the
@@ -20,11 +26,11 @@ execute engine-setup to complete the major upgrade.
 *Final stage*, as new channel were added into the system, execute, yum update, to have the system
 up to date and disable previous major versions related channels not required anymore.
 
-**Note**:  
-The upgrades are **incremental**.  
+**Note**:
+The upgrades are **incremental**.
 Example: Systems running 4.0 version, require upgrade to 4.1 before upgrading to 4.2
 
-**Options**:  
+**Options**:
 --backup
       Execute engine-backup before the upgrade
 
